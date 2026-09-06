@@ -21,6 +21,22 @@ The `/ai` page provides a real-time chat experience powered by NVIDIA Nemotron 3
 
 For implementation details, reviewer instructions, architecture, and assignment-specific testing steps, see the [Streaming AI Assignment Guide](./docs/STREAMING-AI-ASSIGNMENT.md).
 
+### Study progress tool contract
+
+`analyzeStudyProgress` is a server-side AI tool defined in [`src/lib/ai/study-progress-tool.ts`](./src/lib/ai/study-progress-tool.ts). It is used when a student asks to analyse progress and supplies all four details below.
+
+| Input | Type | Purpose |
+| --- | --- | --- |
+| `subject` | string | The course or subject name |
+| `completedTopics` | integer | Topics already completed |
+| `totalTopics` | positive integer | Total topics in the course |
+| `hoursStudied` | number | Hours studied so far |
+| `simulateFailure` | optional boolean | Test-only flag set when explicitly testing the tool error state |
+
+The Zod schema validates the input on the server. Its `execute` function returns `{ subject, completionPercentage, remainingTopics, progressLevel, recommendedHours }`; `simulateFailure` is used only to exercise the recoverable error path and is not returned. The chat renders the lifecycle as distinct input-streaming, input-available, output-available, and output-error cards; a successful result appears as a Study Progress card with a completion bar rather than raw JSON.
+
+To test a successful call at `/ai`, ask: “Analyse my progress for Data Structures: I completed 7 of 12 topics and studied 14 hours.” To demonstrate the designed tool-error card, explicitly ask StudyFlow AI to test a progress-tool error with the same details.
+
 ## Tech Stack
 
 - Next.js 16.3.4

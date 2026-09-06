@@ -1,6 +1,7 @@
 
-import { createUIMessageStreamResponse, convertToModelMessages, streamText, toUIMessageStream, type UIMessage } from "ai";
+import { createUIMessageStreamResponse, convertToModelMessages, stepCountIs, streamText, toUIMessageStream, type UIMessage } from "ai";
 import { getStudyFlowModel, STUDYFLOW_SYSTEM_PROMPT } from "@/lib/ai/config";
+import { analyzeStudyProgress, type StudyFlowTools } from "@/lib/ai/study-progress-tool";
 
 export const runtime = "nodejs";
 
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "A valid message history is required." }, { status: 400 });
     }
 
-    const messages = body.messages as UIMessage[];
+    const messages = body.messages as UIMessage<unknown, Record<string, never>, StudyFlowTools>[];
     const modelMessages = await convertToModelMessages(messages);
     const result = streamText({
       model: getStudyFlowModel(),
@@ -20,6 +21,8 @@ export async function POST(request: Request) {
       messages: modelMessages,
       abortSignal: request.signal,
       maxRetries: 1,
+      tools: { analyzeStudyProgress },
+      stopWhen: stepCountIs(5),
     });
 
     return createUIMessageStreamResponse({
