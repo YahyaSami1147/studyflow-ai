@@ -107,6 +107,33 @@ This repository is the continuing StudyFlow capstone. The streaming AI functiona
 
 The [Streaming AI Assignment Guide](./docs/STREAMING-AI-ASSIGNMENT.md) contains the new functionality, architecture, important source files, reviewer test instructions, and verification information.
 
+## Reliability and failure testing
+
+The `/ai` chat preserves its conversation and partial streamed text when a request fails, then offers a safe retry action. It also distinguishes connection interruptions, rate limits, interrupted streams, and general server failures without exposing provider details.
+
+For local development only, add this to `.env.local` and restart the dev server:
+
+```env
+STUDYFLOW_ENABLE_FAILURE_TESTS=true
+```
+
+The hooks are disabled outside Next.js development mode. In the browser console at `/ai`, set one of the following values, then send or retry a chat message:
+
+```js
+localStorage.setItem("studyflow-failure-test", "server")     // forced HTTP 500
+localStorage.setItem("studyflow-failure-test", "rate-limit") // forced HTTP 429
+localStorage.setItem("studyflow-failure-test", "slow")       // 2.5-second delay
+localStorage.setItem("studyflow-failure-test", "mid-stream") // interrupts after text starts
+```
+
+Remove the hook and retry normally with:
+
+```js
+localStorage.removeItem("studyflow-failure-test")
+```
+
+To test the route-level error boundary locally, temporarily add `throw new Error("Local route test")` at the top of `src/app/ai/page.tsx`, open `/ai`, confirm the Try again UI appears, then remove the line before committing.
+
 ## Security
 
 - `NVIDIA_API_KEY` is server-side only.
