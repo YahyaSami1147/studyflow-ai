@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { redirect } from "next/navigation";
 
 export default function AiAssistantPage() {
-  return <PlaceholderPage title="AI Assistant" description="Your future AI-powered study assistant." eyebrow="Coming soon" />;
+  redirect("/ai");
 }

@@ -20,7 +20,7 @@ const groups: { label: string; links: { label: string; href: string; icon: Lucid
     links: [
       { label: "Calendar", href: "/calendar", icon: CalendarDays },
       { label: "Notes", href: "/notes", icon: FileText },
-      { label: "AI Assistant", href: "/ai-assistant", icon: Sparkles },
+      { label: "AI Assistant", href: "/ai", icon: Sparkles },
       { label: "Progress", href: "/progress", icon: Gauge },
     ],
   },
