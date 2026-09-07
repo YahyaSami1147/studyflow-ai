@@ -45,6 +45,7 @@ describe("StudyFlowChat", () => {
     render(<StudyFlowChat />);
 
     expect(screen.getByText("Start with the call stack.")).toBeInTheDocument();
+    expect(screen.getByText("StudyFlow is responding.")).toBeInTheDocument();
   });
 
   it("announces a response error without crashing the chat", () => {

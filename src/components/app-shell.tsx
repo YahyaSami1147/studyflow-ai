@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Brand />
             <Link href="/profile" className="text-sm font-medium text-slate-600">Profile</Link>
           </div>
-          <div className="mt-4 -mx-1 overflow-x-auto pb-1 [scrollbar-width:none]">
+          <div className="mt-4 -mx-1 overflow-x-auto scroll-smooth scroll-px-1 snap-x snap-mandatory pb-1 [scrollbar-width:none]">
             <NavLinks />
           </div>
         </header>

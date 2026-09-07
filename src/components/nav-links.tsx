@@ -43,8 +43,8 @@ export function NavLinks() {
           <p className="hidden px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 lg:block">{group.label}</p>
           {group.links.map(({ label, href, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <Link key={href} href={href} className={`flex items-center gap-3 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}>
+              return (
+              <Link key={href} href={href} className={`flex shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}>
                 <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
                 {label}
               </Link>

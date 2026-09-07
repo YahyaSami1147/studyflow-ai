@@ -21,11 +21,13 @@ export function ConfirmDialog({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (open && !dialog.open) {
+      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       dialog.showModal();
       confirmRef.current?.focus();
     }
@@ -33,7 +35,7 @@ export function ConfirmDialog({
   }, [open]);
 
   useEffect(() => {
-    if (!open) returnFocusRef?.current?.focus();
+    if (!open) (returnFocusRef?.current ?? openerRef.current)?.focus();
   }, [open, returnFocusRef]);
 
   function cancel(event?: React.SyntheticEvent) {
@@ -45,6 +47,9 @@ export function ConfirmDialog({
     <dialog
       ref={dialogRef}
       onCancel={cancel}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") cancel(event);
+      }}
       onClick={(event) => {
         if (event.target === event.currentTarget) cancel();
       }}

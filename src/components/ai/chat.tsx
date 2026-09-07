@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { memo, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import dynamic from "next/dynamic";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AlertCircle, ArrowDown, BarChart3, Bot, CheckCircle2, Clock3, LoaderCircle, RefreshCw, Square, WifiOff } from "lucide-react";
 import { AnimatedSendButton, type SendButtonState } from "@/components/animated-send-button";
 import { useStudyFlow } from "@/providers/studyflow-provider";
 import { buildStudyFlowContext } from "@/lib/ai/studyflow-context";
 import type { StudyProgressAnalysis } from "@/lib/ai/study-progress-tool";
-import { StudyQuizToolCard, type StudyFlowMessage } from "@/components/ai/tool-cards";
+import type { StudyFlowMessage } from "@/components/ai/tool-cards";
+
+const StudyQuizToolCard = dynamic(() => import("@/components/ai/tool-cards").then((module) => module.StudyQuizToolCard), {
+  ssr: false,
+  loading: () => <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800" role="status">Preparing quiz results</div>,
+});
+const MarkdownRenderer = dynamic(() => import("react-markdown"), { ssr: false });
 
 const BOTTOM_THRESHOLD = 80;
 const EXAMPLE_PROMPTS = ["Explain recursion simply", "Create a study plan for my exam", "Quiz me on operating systems"];
@@ -47,6 +53,7 @@ export function StudyFlowChat() {
   const isWaitingForFirstToken = status === "submitted";
   const isStreamingWithoutText = status === "streaming" && !hasAssistantText;
   const hasPartialResponse = hasPartialAssistantResponse(messages);
+  const responseAnnouncement = isGenerating ? "StudyFlow is responding." : hasAssistantText ? "StudyFlow finished responding." : "";
 
   useEffect(() => {
     mounted.current = true;
@@ -141,12 +148,13 @@ export function StudyFlowChat() {
       {(isWaitingForFirstToken || isStreamingWithoutText || (isRetrying && isGenerating)) && <PendingState isRetrying={isRetrying} isStreaming={status === "streaming"} />}
       {error && <ChatErrorState error={error} hasPartialResponse={hasPartialResponse} isRetrying={isRetrying} onRetry={() => void handleRetry()} />}
     </div>
+    <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{responseAnnouncement}</p>
 
     {showJump && <button type="button" onClick={jumpToLatest} className="absolute bottom-28 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-md transition-colors hover:bg-blue-50"><ArrowDown size={14} aria-hidden="true" />Jump to latest</button>}
     <div className="border-t border-[var(--line)] bg-slate-50/70 p-3 sm:p-5"><form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl flex-wrap items-end gap-2 rounded-lg border border-[var(--line)] bg-white p-2 shadow-sm focus-within:border-blue-400"><label htmlFor="studyflow-message" className="sr-only">Message StudyFlow AI</label><textarea ref={composerRef} id="studyflow-message" value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={handleKeyDown} rows={1} placeholder="Ask about your study plan, courses, or next task..." className="max-h-32 min-h-11 min-w-[8rem] flex-1 resize-none bg-transparent px-2 py-3 text-sm leading-5 text-slate-800 outline-none placeholder:text-slate-400" /><div className="flex shrink-0 flex-wrap justify-end gap-2">
       <AnimatedSendButton state={sendState === "error" && input.trim() ? "idle" : sendState} type="submit" disabled={isGenerating || (!input.trim() && sendState !== "error")} />
       {isGenerating && <button type="button" onClick={() => void stop()} className="flex h-11 shrink-0 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-semibold text-white transition-colors hover:bg-slate-700" aria-label="Stop generating"><Square size={14} fill="currentColor" aria-hidden="true" /><span>Stop</span></button>}
-    </div></form><p className="mx-auto mt-2 max-w-3xl px-2 text-[11px] text-slate-400">Enter to send · Shift+Enter for a new line</p></div>
+    </div></form><p className="mx-auto mt-2 max-w-3xl px-2 text-[11px] text-slate-600">Enter to send · Shift+Enter for a new line</p></div>
   </section>;
 }
 
@@ -178,22 +186,23 @@ function hasPartialAssistantResponse(messages: StudyFlowMessage[]) {
   return messages.slice(lastUserMessageIndex + 1).some((message) => message.role === "assistant" && getMessageText(message).trim().length > 0);
 }
 
-function ChatMessage({ message }: { message: StudyFlowMessage }) {
+const ChatMessage = memo(function ChatMessage({ message }: { message: StudyFlowMessage }) {
   const isUser = message.role === "user";
   const text = getMessageText(message);
   const progressToolParts = message.parts.filter((part): part is Extract<StudyFlowMessage["parts"][number], { type: "tool-analyzeStudyProgress" }> => part.type === "tool-analyzeStudyProgress");
   const quizToolParts = message.parts.filter((part): part is Extract<StudyFlowMessage["parts"][number], { type: "tool-createStudyQuiz" }> => part.type === "tool-createStudyQuiz");
   return <article className={`flex min-w-0 gap-3 ${isUser ? "justify-end" : "justify-start"}`}><div className={`min-w-0 max-w-[88%] sm:max-w-[78%] ${isUser ? "order-1" : "order-2"}`}><p className={`mb-1 text-[10px] font-bold uppercase tracking-[0.14em] ${isUser ? "text-right text-slate-400" : "text-blue-600"}`}>{isUser ? "You" : "StudyFlow AI"}</p>{text && (isUser ? <div className="whitespace-pre-wrap break-words rounded-lg bg-blue-600 px-4 py-3 text-sm leading-6 text-white">{text}</div> : <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800"><MarkdownMessage content={text} /></div>)}{progressToolParts.map((part) => <StudyProgressToolPart key={part.toolCallId} part={part} />)}{quizToolParts.map((part) => <StudyQuizToolCard key={part.toolCallId} part={part} />)}</div>{!isUser && <span className="order-1 mt-5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600"><Bot size={16} aria-hidden="true" /></span>}</article>;
-}
+});
 
 function MarkdownMessage({ content }: { content: string }) {
   const markdown = content.replace(/<br\s*\/?>/gi, "\n");
-  return <div className="break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"><ReactMarkdown remarkPlugins={[remarkGfm]} components={{ h1: ({ children }) => <h1 className="mb-3 mt-5 text-xl font-bold tracking-tight text-slate-950">{children}</h1>, h2: ({ children }) => <h2 className="mb-3 mt-5 text-lg font-bold tracking-tight text-slate-950">{children}</h2>, h3: ({ children }) => <h3 className="mb-2 mt-4 text-base font-bold text-slate-900">{children}</h3>, p: ({ children }) => <p className="my-3">{children}</p>, ul: ({ children }) => <ul className="my-3 list-disc space-y-1 pl-5">{children}</ul>, ol: ({ children }) => <ol className="my-3 list-decimal space-y-1 pl-5">{children}</ol>, li: ({ children }) => <li className="pl-1">{children}</li>, strong: ({ children }) => <strong className="font-semibold text-slate-950">{children}</strong>, a: ({ children, href }) => <a href={href} target="_blank" rel="noreferrer" className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900">{children}</a>, code: ({ children }) => <code className="rounded bg-slate-200 px-1 py-0.5 font-mono text-[0.85em] text-slate-900">{children}</code>, pre: ({ children }) => <pre className="my-3 overflow-x-auto rounded-md bg-slate-900 p-3 text-xs leading-5 text-slate-100">{children}</pre>, table: ({ children }) => <div className="my-3 overflow-x-auto"><table className="w-full min-w-max border-collapse text-left text-xs">{children}</table></div>, th: ({ children }) => <th className="border border-slate-200 bg-slate-100 px-2 py-1.5 font-semibold text-slate-900">{children}</th>, td: ({ children }) => <td className="border border-slate-200 px-2 py-1.5 align-top">{children}</td>, hr: () => <hr className="my-4 border-slate-200" /> }}>{markdown}</ReactMarkdown></div>;
+  if (!/[#*_`[\]()>]/.test(markdown)) return <p className="whitespace-pre-wrap">{markdown}</p>;
+  return <div className="break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"><MarkdownRenderer remarkPlugins={[remarkGfm]} components={{ h1: ({ children }) => <h1 className="mb-3 mt-5 text-xl font-bold tracking-tight text-slate-950">{children}</h1>, h2: ({ children }) => <h2 className="mb-3 mt-5 text-lg font-bold tracking-tight text-slate-950">{children}</h2>, h3: ({ children }) => <h3 className="mb-2 mt-4 text-base font-bold text-slate-900">{children}</h3>, p: ({ children }) => <p className="my-3">{children}</p>, ul: ({ children }) => <ul className="my-3 list-disc space-y-1 pl-5">{children}</ul>, ol: ({ children }) => <ol className="my-3 list-decimal space-y-1 pl-5">{children}</ol>, li: ({ children }) => <li className="pl-1">{children}</li>, strong: ({ children }) => <strong className="font-semibold text-slate-950">{children}</strong>, a: ({ children, href }) => <a href={href} target="_blank" rel="noreferrer" className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900">{children}</a>, code: ({ children }) => <code className="rounded bg-slate-200 px-1 py-0.5 font-mono text-[0.85em] text-slate-900">{children}</code>, pre: ({ children }) => <pre className="my-3 overflow-x-auto rounded-md bg-slate-900 p-3 text-xs leading-5 text-slate-100">{children}</pre>, table: ({ children }) => <div className="my-3 overflow-x-auto"><table className="w-full min-w-max border-collapse text-left text-xs">{children}</table></div>, th: ({ children }) => <th className="border border-slate-200 bg-slate-100 px-2 py-1.5 font-semibold text-slate-900">{children}</th>, td: ({ children }) => <td className="border border-slate-200 px-2 py-1.5 align-top">{children}</td>, hr: () => <hr className="my-4 border-slate-200" /> }}>{markdown}</MarkdownRenderer></div>;
 }
 
 function StudyProgressToolPart({ part }: { part: Extract<StudyFlowMessage["parts"][number], { type: "tool-analyzeStudyProgress" }> }) {
   if (part.state === "input-streaming") return <div className="mt-2 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800" role="status"><LoaderCircle className="animate-spin" size={18} aria-hidden="true" /><div><p className="font-semibold">Preparing your study analysis</p><p className="mt-0.5 text-xs text-blue-700">StudyFlow AI is gathering the progress details.</p></div></div>;
-  if (part.state === "input-available") return <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><div className="flex items-center gap-2 font-semibold"><Clock3 size={17} aria-hidden="true" />Reviewing study details</div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><Detail label="Subject" value={part.input.subject} /><Detail label="Topics" value={`${part.input.completedTopics} of ${part.input.totalTopics}`} /><Detail label="Study time" value={`${part.input.hoursStudied} hours`} /></div></div>;
+  if (part.state === "input-available") return <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" role="status" aria-live="polite"><div className="flex items-center gap-2 font-semibold"><Clock3 size={17} aria-hidden="true" />Reviewing study details</div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><Detail label="Subject" value={part.input.subject} /><Detail label="Topics" value={`${part.input.completedTopics} of ${part.input.totalTopics}`} /><Detail label="Study time" value={`${part.input.hoursStudied} hours`} /></div></div>;
   if (part.state === "output-error") return <ToolErrorCard message={part.errorText} />;
   if (part.state !== "output-available" || !isStudyProgressAnalysis(part.output)) return <ToolErrorCard message="We could not read this progress result. Please try again." />;
   const output = part.output;
