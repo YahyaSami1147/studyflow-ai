@@ -100,6 +100,10 @@ Open [http://localhost:3000](http://localhost:3000). StudyFlow AI is available a
 - `npm run build` creates a production build.
 - `npm run start` starts the production server.
 - `npm run lint` runs ESLint.
+- `npm test` runs the Vitest suite once.
+- `npm run test:watch` runs Vitest in watch mode.
+
+Vitest and React Testing Library tests are colocated with the source under `src/**/*.test.ts` and `src/**/*.test.tsx`.
 
 ## Streaming AI Assignment
 
