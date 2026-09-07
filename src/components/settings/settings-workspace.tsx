@@ -33,9 +33,9 @@ export function SettingsWorkspace() {
   return (
     <>
       <header className="border-b border-[var(--line)] pb-8">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Settings</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Workspace settings</h1>
-        <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--muted)]">Keep your local StudyFlow preferences aligned with the way you plan, track, and complete work.</p>
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">Settings</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Workspace settings</h1>
+        <p className="mt-3 max-w-2xl text-base leading-7 text-slate-300">Keep your local StudyFlow preferences aligned with the way you plan, track, and complete work.</p>
       </header>
 
       <section className="mt-8 space-y-6">
@@ -75,7 +75,7 @@ export function SettingsWorkspace() {
               <h2 className="text-lg font-semibold text-slate-950">Data</h2>
               <p className="mt-1 text-sm text-[var(--muted)]">Reset all local StudyFlow data stored in this browser.</p>
             </div>
-            <button ref={resetButtonRef} type="button" onClick={() => setResetOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"><RotateCcw size={15} aria-hidden="true" />Reset StudyFlow data</button>
+            <button ref={resetButtonRef} type="button" onClick={() => setResetOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-400/30 bg-red-500/10 px-4 text-sm font-semibold text-red-200 hover:bg-red-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"><RotateCcw size={15} aria-hidden="true" />Reset StudyFlow data</button>
           </div>
         </div>
       </section>

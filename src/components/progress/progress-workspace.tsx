@@ -36,9 +36,9 @@ export function ProgressWorkspace() {
   return (
     <>
       <header className="border-b border-[var(--line)] pb-8">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Progress</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Study progress</h1>
-        <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--muted)]">A real view of how your coursework is moving forward across courses, assignments, and tasks.</p>
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">Progress</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">Study progress</h1>
+        <p className="mt-3 max-w-2xl text-base leading-7 text-slate-300">A real view of how your coursework is moving forward across courses, assignments, and tasks.</p>
       </header>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Progress overview">
@@ -57,11 +57,11 @@ export function ProgressWorkspace() {
           </div>
           <div className="mt-4">
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-medium text-slate-700">Completion</span>
-              <span className="text-[var(--muted)]">{taskCompletion}%</span>
+              <span className="font-medium text-slate-200">Completion</span>
+              <span className="text-slate-300">{taskCompletion}%</span>
             </div>
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full rounded-full bg-blue-600" style={{ width: `${taskCompletion}%` }} />
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" style={{ width: `${taskCompletion}%` }} />
             </div>
           </div>
         </ProgressPanel>
@@ -75,23 +75,23 @@ export function ProgressWorkspace() {
           </div>
           <div className="mt-4">
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-medium text-slate-700">Completion</span>
-              <span className="text-[var(--muted)]">{assignmentCompletion}%</span>
+              <span className="font-medium text-slate-200">Completion</span>
+              <span className="text-slate-300">{assignmentCompletion}%</span>
             </div>
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full rounded-full bg-violet-600" style={{ width: `${assignmentCompletion}%` }} />
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-indigo-500" style={{ width: `${assignmentCompletion}%` }} />
             </div>
           </div>
         </ProgressPanel>
       </section>
 
-      <section className="mt-8 rounded-[var(--radius-card)] border border-[var(--line)] bg-white p-5 sm:p-6">
+      <section className="mt-8 rounded-[var(--radius-card)] border border-[var(--line)] bg-slate-950/40 p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-semibold text-slate-950">Course progress</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">Each course reflects completed assignments and tasks from your StudyFlow data.</p>
+            <h2 className="font-semibold text-white">Course progress</h2>
+            <p className="mt-1 text-sm text-slate-300">Each course reflects completed assignments and tasks from your StudyFlow data.</p>
           </div>
-          <Link href="/courses" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">View courses <ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link href="/courses" className="inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-300 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">View courses <ArrowRight size={15} aria-hidden="true" /></Link>
         </div>
 
         <div className="mt-6 space-y-5">
@@ -104,23 +104,23 @@ export function ProgressWorkspace() {
             const courseProgress = getCourseProgress(course.id);
 
             return (
-              <div key={course.id} className="rounded-[var(--radius-card)] border border-[var(--line)] bg-slate-50/70 p-4 sm:p-5">
+              <div key={course.id} className="rounded-[var(--radius-card)] border border-[var(--line)] bg-slate-900/50 p-4 sm:p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-slate-900">{course.name}</h3>
-                    {course.code ? <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">{course.code}</p> : null}
+                    <h3 className="text-base font-semibold text-white">{course.name}</h3>
+                    {course.code ? <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-300">{course.code}</p> : null}
                   </div>
-                  <span className="text-sm font-semibold text-slate-700">{courseProgress}%</span>
+                  <span className="text-sm font-semibold text-slate-200">{courseProgress}%</span>
                 </div>
 
-                <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-200">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${courseProgress}%` }} />
+                <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-700">
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-500" style={{ width: `${courseProgress}%` }} />
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-                  <span className="rounded-full border border-[var(--line)] bg-white px-2.5 py-1">{completedAssignments} / {courseAssignments.length} assignments</span>
-                  <span className="rounded-full border border-[var(--line)] bg-white px-2.5 py-1">{completedTasks} / {courseTasks.length} tasks</span>
-                  {totalCourseWork === 0 ? <span className="rounded-full border border-[var(--line)] bg-white px-2.5 py-1">No tracked work yet</span> : null}
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-300">
+                  <span className="rounded-full border border-[var(--line)] bg-slate-950/60 px-2.5 py-1">{completedAssignments} / {courseAssignments.length} assignments</span>
+                  <span className="rounded-full border border-[var(--line)] bg-slate-950/60 px-2.5 py-1">{completedTasks} / {courseTasks.length} tasks</span>
+                  {totalCourseWork === 0 ? <span className="rounded-full border border-[var(--line)] bg-slate-950/60 px-2.5 py-1">No tracked work yet</span> : null}
                 </div>
               </div>
             );
@@ -133,23 +133,23 @@ export function ProgressWorkspace() {
 
 function Metric({ label, value, note, icon: Icon }: { label: string; value: string; note: string; icon: typeof CheckCircle2 }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--line)] bg-white p-5">
+    <div className="rounded-[var(--radius-card)] border border-[var(--line)] bg-slate-950/40 p-5 shadow-[0_10px_24px_rgba(2,6,23,0.2)]">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--muted)]">{label}</p>
-        <Icon size={18} strokeWidth={1.8} className="text-blue-600" aria-hidden="true" />
+        <p className="text-sm text-slate-300">{label}</p>
+        <Icon size={18} strokeWidth={1.8} className="text-cyan-300" aria-hidden="true" />
       </div>
-      <p className="mt-5 text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
-      <p className="mt-1 text-xs text-[var(--muted)]">{note}</p>
+      <p className="mt-5 text-2xl font-semibold tracking-tight text-white">{value}</p>
+      <p className="mt-1 text-xs text-slate-300">{note}</p>
     </div>
   );
 }
 
 function ProgressPanel({ title, actionHref, actionLabel, children }: { title: string; actionHref: string; actionLabel: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[var(--radius-card)] border border-[var(--line)] bg-white p-5 sm:p-6">
+    <section className="rounded-[var(--radius-card)] border border-[var(--line)] bg-slate-950/40 p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-semibold text-slate-950">{title}</h2>
-        <Link href={actionHref} className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">{actionLabel} <ArrowRight size={13} aria-hidden="true" /></Link>
+        <h2 className="font-semibold text-white">{title}</h2>
+        <Link href={actionHref} className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-300 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">{actionLabel} <ArrowRight size={13} aria-hidden="true" /></Link>
       </div>
       <div className="mt-5">{children}</div>
     </section>
@@ -158,30 +158,30 @@ function ProgressPanel({ title, actionHref, actionLabel, children }: { title: st
 
 function StatTile({ label, value, tone }: { label: string; value: string; tone: "success" | "neutral" | "danger" }) {
   const toneClasses = {
-    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    neutral: "border-slate-200 bg-slate-50 text-slate-700",
-    danger: "border-red-200 bg-red-50 text-red-700",
+    success: "border-emerald-400/20 bg-emerald-500/10 text-emerald-100 ring-1 ring-emerald-300/10",
+    neutral: "border-slate-700 bg-slate-900/60 text-slate-100 ring-1 ring-slate-600/40",
+    danger: "border-red-400/20 bg-red-500/10 text-red-100 ring-1 ring-red-300/10",
   };
 
   return (
     <div className={`rounded-md border p-3 ${toneClasses[tone]}`}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] opacity-80">{label}</p>
-      <p className="mt-2 text-xl font-semibold">{value}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-current/80">{label}</p>
+      <p className="mt-2 text-xl font-semibold text-white">{value}</p>
     </div>
   );
 }
 
 function EmptyProgressState() {
   return (
-    <section className="rounded-[var(--radius-card)] border border-dashed border-slate-300 bg-white px-6 py-16 text-center sm:px-10">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+    <section className="rounded-[var(--radius-card)] border border-dashed border-[var(--line)] bg-slate-950/30 px-6 py-16 text-center sm:px-10">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-300">
         <Gauge size={22} aria-hidden="true" />
       </div>
-      <h2 className="mt-5 text-xl font-semibold tracking-tight text-slate-950">No progress to show yet</h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[var(--muted)]">Add a course and start completing assignments and tasks to build your StudyFlow progress.</p>
+      <h2 className="mt-5 text-xl font-semibold tracking-tight text-white">No progress to show yet</h2>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-300">Add a course and start completing assignments and tasks to build your StudyFlow progress.</p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link href="/courses" className="inline-flex h-10 items-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Add course <ArrowRight size={16} aria-hidden="true" /></Link>
-        <Link href="/tasks" className="inline-flex h-10 items-center rounded-md border border-[var(--line)] bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">View tasks</Link>
+        <Link href="/courses" className="inline-flex h-10 items-center gap-2 rounded-md bg-cyan-400 px-4 text-sm font-semibold text-slate-950 hover:bg-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Add course <ArrowRight size={16} aria-hidden="true" /></Link>
+        <Link href="/tasks" className="inline-flex h-10 items-center rounded-md border border-[var(--line)] bg-slate-900/60 px-4 text-sm font-semibold text-white hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">View tasks</Link>
       </div>
     </section>
   );
@@ -190,18 +190,18 @@ function EmptyProgressState() {
 function ProgressSkeleton() {
   return (
     <div role="status" aria-label="Loading progress" className="animate-pulse">
-      <div className="h-4 w-20 rounded bg-slate-200" />
-      <div className="mt-4 h-10 w-64 rounded bg-slate-200" />
-      <div className="mt-3 h-5 w-96 max-w-full rounded bg-slate-200" />
+      <div className="h-4 w-20 rounded bg-slate-700" />
+      <div className="mt-4 h-10 w-64 rounded bg-slate-700" />
+      <div className="mt-3 h-5 w-96 max-w-full rounded bg-slate-700" />
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="h-32 rounded-[var(--radius-card)] bg-slate-200" />
-        <div className="h-32 rounded-[var(--radius-card)] bg-slate-200" />
-        <div className="h-32 rounded-[var(--radius-card)] bg-slate-200" />
-        <div className="h-32 rounded-[var(--radius-card)] bg-slate-200" />
+        <div className="h-32 rounded-[var(--radius-card)] bg-slate-700" />
+        <div className="h-32 rounded-[var(--radius-card)] bg-slate-700" />
+        <div className="h-32 rounded-[var(--radius-card)] bg-slate-700" />
+        <div className="h-32 rounded-[var(--radius-card)] bg-slate-700" />
       </div>
       <div className="mt-8 grid gap-5 xl:grid-cols-2">
-        <div className="h-56 rounded-[var(--radius-card)] bg-slate-200" />
-        <div className="h-56 rounded-[var(--radius-card)] bg-slate-200" />
+        <div className="h-56 rounded-[var(--radius-card)] bg-slate-700" />
+        <div className="h-56 rounded-[var(--radius-card)] bg-slate-700" />
       </div>
     </div>
   );

@@ -44,7 +44,7 @@ export function NavLinks() {
           {group.links.map(({ label, href, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
               return (
-              <Link key={href} href={href} className={`flex shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}>
+              <Link key={href} href={href} className={`flex shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium transition-all ${active ? "border-cyan-400/30 bg-cyan-500/10 text-cyan-200 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.08)]" : "border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white"}`}>
                 <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
                 {label}
               </Link>

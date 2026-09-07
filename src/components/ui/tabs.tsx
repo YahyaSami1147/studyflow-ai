@@ -58,7 +58,7 @@ export function Tabs({ items, ariaLabel = "Tabs" }: { items: TabItem[]; ariaLabe
           tabIndex={selected ? 0 : -1}
           onClick={() => setActiveId(item.id)}
           onKeyDown={(event) => handleKeyDown(event, index)}
-          className={`relative shrink-0 rounded-t-md px-3 py-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 ${selected ? "text-blue-700 after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-blue-600" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
+          className={`relative shrink-0 rounded-t-md px-3 py-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-cyan-300 ${selected ? "text-cyan-300 after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-cyan-300" : "text-slate-300 hover:bg-slate-900/50 hover:text-white"}`}
         >{item.label}</button>;
       })}
     </div>
