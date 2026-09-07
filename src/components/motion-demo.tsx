@@ -9,6 +9,7 @@ const modes: { value: Outcome; label: string }[] = [
   { value: "error", label: "Force Error" },
   { value: "random", label: "Random" },
 ];
+const DEMO_REQUEST_DURATION = 1800;
 
 // No network calls. Cancellation clears the timer and settles the pending promise.
 function simulateSend(outcome: Outcome, signal: AbortSignal): Promise<void> {
@@ -24,7 +25,7 @@ function simulateSend(outcome: Outcome, signal: AbortSignal): Promise<void> {
       } else {
         resolve();
       }
-    }, 1100);
+    }, DEMO_REQUEST_DURATION);
     signal.addEventListener("abort", abort, { once: true });
     if (signal.aborted) abort();
   });
@@ -74,7 +75,7 @@ export function MotionDemo() {
 
   return <section className="rounded-[var(--radius-card)] border border-[var(--line)] bg-white p-5 shadow-sm sm:p-6" aria-labelledby="try-button">
     <h2 id="try-button" className="text-lg font-semibold">Try the complete lifecycle</h2>
-    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Each practice request takes 1.1 seconds. Random succeeds 80% of the time. This demo does not contact the AI backend.</p>
+    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Each practice request takes 1.8 seconds so the full shared button lifecycle is visible. Random succeeds 80% of the time. This demo does not contact the AI backend.</p>
     <fieldset className="mt-5">
       <legend className="text-sm font-semibold">Next request outcome</legend>
       <div className="mt-2 flex flex-wrap gap-2">

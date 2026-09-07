@@ -14,10 +14,12 @@ export default function MotionDemoPage() {
     <section className="mt-6 rounded-[var(--radius-card)] border border-[var(--line)] bg-white p-5 sm:p-6" aria-labelledby="motion-decisions">
       <h2 id="motion-decisions" className="text-lg font-semibold">Motion decisions</h2>
       <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-[var(--muted)]">
-        <li>Hover and press use 160ms ease-out transitions for responsive feedback. Press scales to 0.98.</li>
-        <li>Labels, icons and state overlays transition over 280ms with ease-out, responding quickly and settling smoothly. Success stays visible for 900ms.</li>
-        <li>Transform and opacity animate within a fixed-width button to keep the composer stable.</li>
-        <li>Reduced motion removes movement and spinner rotation, with immediate text, icon and color feedback. The keyboard focus outline remains visible.</li>
+        <li>Hover uses a 160ms ease-out transform and shifts the plane 2px right; press scales to 0.98 with a 100ms transition.</li>
+        <li>The paper plane launches for 1450ms with linear upper-right travel and a separate linear 3D-like 360° roll on the (1, -1, 0) axis.</li>
+        <li>Six tail particles use fixed positions with 500ms ease-out fades and staggered delays from 250ms through 850ms; the plane fades quickly during its final 12%.</li>
+        <li>Sending appears after a 1120ms delay while the launch is still finishing. The demo fake request lasts 1800ms, then Sent stays visible for 900ms before returning to Idle.</li>
+        <li>State layers, color overlays and the flight use transform and opacity so the fixed-width button does not reflow.</li>
+        <li>Reduced motion removes travel, roll, particles and spinner rotation while preserving Sending, Sent, Retry/Error, transitions, and the visible focus outline.</li>
       </ul>
     </section>
   </AppShell>;
