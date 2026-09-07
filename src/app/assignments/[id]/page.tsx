@@ -1,6 +1,7 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { AssignmentDetail } from "@/components/assignments/assignment-detail";
 
 export default async function AssignmentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <PlaceholderPage title={`Assignment ${id}`} description="A future assignment view with instructions, dates, and status." eyebrow="Assignment detail" />;
+  return <AppShell><AssignmentDetail assignmentId={id} /></AppShell>;
 }

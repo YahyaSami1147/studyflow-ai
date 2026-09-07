@@ -1,5 +1,6 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { ProgressWorkspace } from "@/components/progress/progress-workspace";
 
 export default function ProgressPage() {
-  return <PlaceholderPage title="Progress" description="Understand your study rhythm and celebrate steady progress." />;
+  return <AppShell><ProgressWorkspace /></AppShell>;
 }

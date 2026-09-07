@@ -1,5 +1,6 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { CalendarWorkspace } from "@/components/calendar/calendar-workspace";
 
 export default function CalendarPage() {
-  return <PlaceholderPage title="Calendar" description="See your study schedule and important dates in one place." />;
+  return <AppShell><CalendarWorkspace /></AppShell>;
 }

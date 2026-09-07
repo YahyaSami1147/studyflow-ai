@@ -4,7 +4,7 @@ export const studyProgressInputSchema = z.object({
   subject: z.string().min(1).max(80).describe("The course or subject being analysed."),
   completedTopics: z.number().int().min(0).describe("How many topics the student has completed."),
   totalTopics: z.number().int().positive().max(500).describe("The total number of topics in the course."),
-  hoursStudied: z.number().min(0).max(10000).describe("The number of hours already studied."),
+  hoursStudied: z.number().min(0).max(10000).default(0).describe("The number of hours already studied, or 0 when StudyFlow has no time-tracking value."),
   simulateFailure: z.boolean().optional().describe("Only set to true when the user explicitly asks to test the tool error state."),
 });
 

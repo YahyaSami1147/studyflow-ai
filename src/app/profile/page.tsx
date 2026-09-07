@@ -1,5 +1,6 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { ProfileWorkspace } from "@/components/profile/profile-workspace";
 
 export default function ProfilePage() {
-  return <PlaceholderPage title="Profile" description="Your personal study preferences and account details will live here." />;
+  return <AppShell><ProfileWorkspace /></AppShell>;
 }

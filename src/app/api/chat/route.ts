@@ -2,7 +2,9 @@
 import { createUIMessageStreamResponse, convertToModelMessages, stepCountIs, streamText, toUIMessageStream, type TextStreamPart, type UIMessage } from "ai";
 import type { ToolSet } from "@ai-sdk/provider-utils";
 import { getStudyFlowModel, STUDYFLOW_SYSTEM_PROMPT } from "@/lib/ai/config";
-import { analyzeStudyProgress, type StudyFlowTools } from "@/lib/ai/study-progress-tool";
+import { analyzeStudyProgress } from "@/lib/ai/study-progress-tool";
+import { createStudyQuiz, type StudyFlowTools } from "@/lib/ai/study-quiz-tool";
+import { formatStudyFlowContext, parseStudyFlowContext } from "@/lib/ai/studyflow-context";
 
 export const runtime = "nodejs";
 
@@ -19,15 +21,17 @@ export async function POST(request: Request) {
       return Response.json({ error: "A valid message history is required." }, { status: 400 });
     }
 
-    const messages = body.messages as UIMessage<unknown, Record<string, never>, StudyFlowTools>[];
+    const requestBody = body as { messages: unknown[]; studyFlowContext?: unknown };
+    const messages = requestBody.messages as UIMessage<unknown, Record<string, never>, StudyFlowTools>[];
+    const studyFlowContext = parseStudyFlowContext(requestBody.studyFlowContext);
     const modelMessages = await convertToModelMessages(messages);
     const result = streamText({
       model: getStudyFlowModel(),
-      system: STUDYFLOW_SYSTEM_PROMPT,
+      system: `${STUDYFLOW_SYSTEM_PROMPT}\n\n${formatStudyFlowContext(studyFlowContext)}`,
       messages: modelMessages,
       abortSignal: request.signal,
       maxRetries: 1,
-      tools: { analyzeStudyProgress },
+      tools: { analyzeStudyProgress, createStudyQuiz },
       stopWhen: stepCountIs(5),
     });
 

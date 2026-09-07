@@ -1,5 +1,6 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { CoursesWorkspace } from "@/components/courses/courses-workspace";
 
 export default function CoursesPage() {
-  return <PlaceholderPage title="Courses" description="Manage and review your courses." />;
+  return <AppShell><CoursesWorkspace /></AppShell>;
 }

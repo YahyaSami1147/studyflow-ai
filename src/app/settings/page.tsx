@@ -1,5 +1,6 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { SettingsWorkspace } from "@/components/settings/settings-workspace";
 
 export default function SettingsPage() {
-  return <PlaceholderPage title="Settings" description="Configure your StudyFlow workspace and preferences." />;
+  return <AppShell><SettingsWorkspace /></AppShell>;
 }

@@ -1,5 +1,6 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { NotesWorkspace } from "@/components/notes/notes-workspace";
 
 export default function NotesPage() {
-  return <PlaceholderPage title="Notes" description="Keep your course notes close to the work they support." />;
+  return <AppShell><NotesWorkspace /></AppShell>;
 }

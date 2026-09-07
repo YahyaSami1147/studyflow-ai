@@ -2,18 +2,21 @@
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AlertCircle, ArrowDown, BarChart3, Bot, CheckCircle2, Clock3, LoaderCircle, RefreshCw, Square, WifiOff } from "lucide-react";
 import { AnimatedSendButton, type SendButtonState } from "@/components/animated-send-button";
-import type { StudyFlowTools, StudyProgressAnalysis } from "@/lib/ai/study-progress-tool";
+import { useStudyFlow } from "@/providers/studyflow-provider";
+import { buildStudyFlowContext } from "@/lib/ai/studyflow-context";
+import type { StudyProgressAnalysis } from "@/lib/ai/study-progress-tool";
+import { StudyQuizToolCard, type StudyFlowMessage } from "@/components/ai/tool-cards";
 
 const BOTTOM_THRESHOLD = 80;
 const EXAMPLE_PROMPTS = ["Explain recursion simply", "Create a study plan for my exam", "Quiz me on operating systems"];
-type StudyFlowMessage = UIMessage<unknown, Record<string, never>, StudyFlowTools>;
 
 export function StudyFlowChat() {
+  const { data } = useStudyFlow();
   const [sendState, setSendState] = useState<SendButtonState>("idle");
   const requestLock = useRef(false);
   const submissionAcknowledged = useRef(false);
@@ -26,6 +29,7 @@ export function StudyFlowChat() {
     },
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      body: () => ({ studyFlowContext: buildStudyFlowContext(data) }),
       headers: (): Record<string, string> => {
         const failureTest = window.localStorage.getItem("studyflow-failure-test");
         return failureTest ? { "x-studyflow-failure-test": failureTest } : {};
@@ -178,7 +182,8 @@ function ChatMessage({ message }: { message: StudyFlowMessage }) {
   const isUser = message.role === "user";
   const text = getMessageText(message);
   const progressToolParts = message.parts.filter((part): part is Extract<StudyFlowMessage["parts"][number], { type: "tool-analyzeStudyProgress" }> => part.type === "tool-analyzeStudyProgress");
-  return <article className={`flex min-w-0 gap-3 ${isUser ? "justify-end" : "justify-start"}`}><div className={`min-w-0 max-w-[88%] sm:max-w-[78%] ${isUser ? "order-1" : "order-2"}`}><p className={`mb-1 text-[10px] font-bold uppercase tracking-[0.14em] ${isUser ? "text-right text-slate-400" : "text-blue-600"}`}>{isUser ? "You" : "StudyFlow AI"}</p>{text && (isUser ? <div className="whitespace-pre-wrap break-words rounded-lg bg-blue-600 px-4 py-3 text-sm leading-6 text-white">{text}</div> : <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800"><MarkdownMessage content={text} /></div>)}{progressToolParts.map((part) => <StudyProgressToolPart key={part.toolCallId} part={part} />)}</div>{!isUser && <span className="order-1 mt-5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600"><Bot size={16} aria-hidden="true" /></span>}</article>;
+  const quizToolParts = message.parts.filter((part): part is Extract<StudyFlowMessage["parts"][number], { type: "tool-createStudyQuiz" }> => part.type === "tool-createStudyQuiz");
+  return <article className={`flex min-w-0 gap-3 ${isUser ? "justify-end" : "justify-start"}`}><div className={`min-w-0 max-w-[88%] sm:max-w-[78%] ${isUser ? "order-1" : "order-2"}`}><p className={`mb-1 text-[10px] font-bold uppercase tracking-[0.14em] ${isUser ? "text-right text-slate-400" : "text-blue-600"}`}>{isUser ? "You" : "StudyFlow AI"}</p>{text && (isUser ? <div className="whitespace-pre-wrap break-words rounded-lg bg-blue-600 px-4 py-3 text-sm leading-6 text-white">{text}</div> : <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800"><MarkdownMessage content={text} /></div>)}{progressToolParts.map((part) => <StudyProgressToolPart key={part.toolCallId} part={part} />)}{quizToolParts.map((part) => <StudyQuizToolCard key={part.toolCallId} part={part} />)}</div>{!isUser && <span className="order-1 mt-5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600"><Bot size={16} aria-hidden="true" /></span>}</article>;
 }
 
 function MarkdownMessage({ content }: { content: string }) {

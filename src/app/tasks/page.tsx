@@ -1,5 +1,6 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AppShell } from "@/components/app-shell";
+import { TasksWorkspace } from "@/components/tasks/tasks-workspace";
 
 export default function TasksPage() {
-  return <PlaceholderPage title="Tasks" description="Organize the next actions that keep your studies moving." />;
+  return <AppShell><TasksWorkspace /></AppShell>;
 }

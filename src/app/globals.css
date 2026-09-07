@@ -63,7 +63,6 @@ textarea:focus-visible {
 	transition: transform 160ms ease-out, outline-color 160ms ease-out;
 }
 
-/* Overlay opacity transitions preserve state colors without animating layout. */
 .animated-send::before,
 .animated-send::after,
 .animated-send__disabled {
@@ -103,8 +102,6 @@ textarea:focus-visible {
 .animated-send[data-state="loading"] .animated-send__spinner { animation-play-state: running; }
 @keyframes send-spin { to { transform: rotate(360deg); } }
 
-/* Launch the outgoing idle icon once per loading entry. Leaving loading
-   removes the animation, so interruption and subsequent sends reset cleanly. */
 .animated-send[data-state="loading"] .animated-send__layer[data-phase="idle"] {
 	transform: none;
 	opacity: 1;
@@ -119,23 +116,19 @@ textarea:focus-visible {
 .animated-send[data-state="loading"] .animated-send__flight { animation: send-launch 1450ms linear both; }
 .animated-send[data-state="loading"] .animated-send__roll { animation: send-roll 1450ms linear both; }
 .animated-send[data-state="loading"] .animated-send__layer[data-phase="loading"] { transition-delay: 1120ms; }
-/* Travel and longitudinal roll are independent. The (1,-1,0) axis runs
-   from the Lucide plane's tail to its upper-right nose, keeping heading fixed. */
 @keyframes send-roll {
-  from { transform: rotate3d(1, -1, 0, 0deg); }
-  to { transform: rotate3d(1, -1, 0, 360deg); }
+	from { transform: rotate3d(1, -1, 0, 0deg); }
+	to { transform: rotate3d(1, -1, 0, 360deg); }
 }
 @keyframes send-launch {
-  0% { transform: translate(0, 0); opacity: 1; }
-  35% { transform: translate(18px, -9px); opacity: 1; }
-  65% { transform: translate(34px, -19px); opacity: 1; }
-  88% { transform: translate(48px, -28px); opacity: 1; }
-  94% { transform: translate(53px, -31px); opacity: 0.9; }
-  100% { transform: translate(60px, -36px); opacity: 0; }
+	0% { transform: translate(0, 0); opacity: 1; }
+	35% { transform: translate(18px, -9px); opacity: 1; }
+	65% { transform: translate(34px, -19px); opacity: 1; }
+	88% { transform: translate(48px, -28px); opacity: 1; }
+	94% { transform: translate(53px, -31px); opacity: 0.9; }
+	100% { transform: translate(60px, -36px); opacity: 0; }
 }
 
-/* Six fixed dots originate behind successive points on the forward flight.
-   Only transforms/opacity animate; leaving loading cancels every delayed dot. */
 .animated-send__trail {
 	position: absolute;
 	left: 4px;
@@ -176,6 +169,15 @@ textarea:focus-visible {
 .animated-send:enabled:active { transform: scale(0.98); transition-duration: 100ms; }
 
 @media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+	}
+
 	.animated-send,
 	.animated-send .animated-send__layer,
 	.animated-send .animated-send__icon { transform: none !important; }
@@ -185,12 +187,4 @@ textarea:focus-visible {
 	.animated-send .animated-send__trail i { animation: none !important; opacity: 0 !important; }
 	.animated-send .animated-send__layer { transition-delay: 0ms !important; }
 	.animated-send[data-state="loading"] .animated-send__layer[data-phase="idle"] { opacity: 0; }
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		scroll-behavior: auto !important;
-		transition-duration: 0.01ms !important;
-	}
 }
