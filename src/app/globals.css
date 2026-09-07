@@ -44,7 +44,147 @@ textarea:focus-visible {
 	outline-offset: 2px;
 }
 
+.animated-send {
+	position: relative;
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 7.5rem;
+	height: 2.75rem;
+	border-radius: 6px;
+	background: var(--brand);
+	color: white;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	isolation: isolate;
+	outline: 3px solid transparent;
+	outline-offset: 4px;
+	transition: transform 160ms ease-out, outline-color 160ms ease-out;
+}
+
+/* Overlay opacity transitions preserve state colors without animating layout. */
+.animated-send::before,
+.animated-send::after,
+.animated-send__disabled {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	opacity: 0;
+	transition: opacity 280ms ease-out;
+}
+
+.animated-send::before { background: var(--success); }
+.animated-send::after { background: #b91c1c; }
+.animated-send[data-state="success"]::before { opacity: 1; }
+.animated-send[data-state="error"]::after { opacity: 1; }
+.animated-send:disabled { cursor: not-allowed; }
+.animated-send__disabled { background: #64748b; }
+.animated-send:disabled[data-state="idle"] .animated-send__disabled { opacity: 1; }
+.animated-send:focus-visible { outline: 3px solid var(--brand); outline-offset: 4px; }
+
+.animated-send__layer {
+	position: relative;
+	grid-area: 1 / 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(5px) scale(0.97);
+	transition: opacity 280ms ease-out, transform 280ms ease-out;
+}
+
+.animated-send__layer[data-visible="true"] { opacity: 1; transform: none; }
+.animated-send__icon { transition: transform 160ms ease-out; }
+.animated-send__spinner { animation: send-spin 900ms linear infinite; animation-play-state: paused; }
+.animated-send[data-state="loading"] .animated-send__spinner { animation-play-state: running; }
+@keyframes send-spin { to { transform: rotate(360deg); } }
+
+/* Launch the outgoing idle icon once per loading entry. Leaving loading
+   removes the animation, so interruption and subsequent sends reset cleanly. */
+.animated-send[data-state="loading"] .animated-send__layer[data-phase="idle"] {
+	transform: none;
+	opacity: 1;
+}
+.animated-send__layer[data-phase="idle"] .animated-send__label { transition: opacity 160ms ease-out; }
+.animated-send__layer[data-phase="idle"][data-visible="false"] .animated-send__flight { opacity: 0; }
+.animated-send[data-state="loading"] .animated-send__layer[data-phase="idle"] .animated-send__label { opacity: 0; }
+.animated-send__flight, .animated-send__roll { display: grid; width: 16px; height: 16px; }
+.animated-send__flight { perspective: 120px; }
+.animated-send__roll { transform-origin: center; }
+.animated-send__flight .animated-send__icon { filter: drop-shadow(0 1px 1px rgba(29, 78, 216, 0.55)); }
+.animated-send[data-state="loading"] .animated-send__flight { animation: send-launch 1450ms linear both; }
+.animated-send[data-state="loading"] .animated-send__roll { animation: send-roll 1450ms linear both; }
+.animated-send[data-state="loading"] .animated-send__layer[data-phase="loading"] { transition-delay: 1120ms; }
+/* Travel and longitudinal roll are independent. The (1,-1,0) axis runs
+   from the Lucide plane's tail to its upper-right nose, keeping heading fixed. */
+@keyframes send-roll {
+  from { transform: rotate3d(1, -1, 0, 0deg); }
+  to { transform: rotate3d(1, -1, 0, 360deg); }
+}
+@keyframes send-launch {
+  0% { transform: translate(0, 0); opacity: 1; }
+  35% { transform: translate(18px, -9px); opacity: 1; }
+  65% { transform: translate(34px, -19px); opacity: 1; }
+  88% { transform: translate(48px, -28px); opacity: 1; }
+  94% { transform: translate(53px, -31px); opacity: 0.9; }
+  100% { transform: translate(60px, -36px); opacity: 0; }
+}
+
+/* Six fixed dots originate behind successive points on the forward flight.
+   Only transforms/opacity animate; leaving loading cancels every delayed dot. */
+.animated-send__trail {
+	position: absolute;
+	left: 4px;
+	top: calc(50% + 3px);
+	pointer-events: none;
+}
+.animated-send__trail i {
+	position: absolute;
+	width: var(--trail-size, 6px);
+	height: var(--trail-size, 6px);
+	border-radius: 50%;
+	background: currentColor;
+	opacity: 0;
+	--trail-x: 6px;
+	--trail-y: -3px;
+	--trail-dx: -6px;
+	--trail-dy: 5px;
+	--trail-delay: 250ms;
+}
+.animated-send__trail i:nth-child(2) { --trail-size: 5px; --trail-x: 11px; --trail-y: -5px; --trail-delay: 370ms; }
+.animated-send__trail i:nth-child(3) { --trail-size: 4px; --trail-x: 15px; --trail-y: -9px; --trail-delay: 490ms; }
+.animated-send__trail i:nth-child(4) { --trail-size: 6px; --trail-x: 20px; --trail-y: -12px; --trail-delay: 610ms; }
+.animated-send__trail i:nth-child(5) { --trail-size: 5px; --trail-x: 25px; --trail-y: -14px; --trail-delay: 730ms; }
+.animated-send__trail i:nth-child(6) { --trail-size: 7px; --trail-x: 30px; --trail-y: -16px; --trail-delay: 850ms; }
+.animated-send[data-state="loading"] .animated-send__trail i {
+	animation: send-trail 500ms ease-out var(--trail-delay) both;
+}
+@keyframes send-trail {
+	0% { transform: translate(var(--trail-x), var(--trail-y)) scale(1); opacity: 0; }
+	12%, 40% { opacity: 0.85; }
+	100% { transform: translate(calc(var(--trail-x) + var(--trail-dx)), calc(var(--trail-y) + var(--trail-dy))) scale(0.4); opacity: 0; }
+}
+
+@media (hover: hover) {
+	.animated-send:enabled:hover { transform: translateY(-1px); }
+	.animated-send:enabled:hover .animated-send__icon { transform: translateX(2px); }
+}
+.animated-send:enabled:active { transform: scale(0.98); transition-duration: 100ms; }
+
 @media (prefers-reduced-motion: reduce) {
+	.animated-send,
+	.animated-send .animated-send__layer,
+	.animated-send .animated-send__icon { transform: none !important; }
+	.animated-send__spinner { animation: none !important; }
+	.animated-send .animated-send__flight, .animated-send .animated-send__roll { animation: none !important; transform: none !important; }
+	.animated-send .animated-send__icon { animation: none !important; }
+	.animated-send .animated-send__trail i { animation: none !important; opacity: 0 !important; }
+	.animated-send .animated-send__layer { transition-delay: 0ms !important; }
+	.animated-send[data-state="loading"] .animated-send__layer[data-phase="idle"] { opacity: 0; }
 	*,
 	*::before,
 	*::after {

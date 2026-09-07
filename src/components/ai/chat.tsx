@@ -5,7 +5,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { AlertCircle, ArrowDown, BarChart3, Bot, CheckCircle2, Clock3, LoaderCircle, RefreshCw, Send, Square, WifiOff } from "lucide-react";
+import { AlertCircle, ArrowDown, BarChart3, Bot, CheckCircle2, Clock3, LoaderCircle, RefreshCw, Square, WifiOff } from "lucide-react";
+import { AnimatedSendButton, type SendButtonState } from "@/components/animated-send-button";
 import type { StudyFlowTools, StudyProgressAnalysis } from "@/lib/ai/study-progress-tool";
 
 const BOTTOM_THRESHOLD = 80;
@@ -13,7 +14,16 @@ const EXAMPLE_PROMPTS = ["Explain recursion simply", "Create a study plan for my
 type StudyFlowMessage = UIMessage<unknown, Record<string, never>, StudyFlowTools>;
 
 export function StudyFlowChat() {
+  const [sendState, setSendState] = useState<SendButtonState>("idle");
+  const requestLock = useRef(false);
+  const submissionAcknowledged = useRef(false);
+  const mounted = useRef(true);
   const { messages, sendMessage, stop, status, error, clearError, regenerate } = useChat<StudyFlowMessage>({
+    onError: () => { if (mounted.current) setSendState("error"); },
+    onFinish: ({ isAbort, isDisconnect, isError, finishReason }) => {
+      if (!mounted.current) return;
+      setSendState((current) => isAbort ? "idle" : isDisconnect || isError || finishReason === "error" ? "error" : current === "loading" ? "success" : current);
+    },
     transport: new DefaultChatTransport({
       api: "/api/chat",
       headers: (): Record<string, string> => {
@@ -33,6 +43,41 @@ export function StudyFlowChat() {
   const isWaitingForFirstToken = status === "submitted";
   const isStreamingWithoutText = status === "streaming" && !hasAssistantText;
   const hasPartialResponse = hasPartialAssistantResponse(messages);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (status !== "streaming" || sendState !== "loading" || submissionAcknowledged.current) return;
+    submissionAcknowledged.current = true;
+    setSendState("success");
+  }, [sendState, status]);
+
+  useEffect(() => {
+    if (sendState !== "success") return;
+    const timer = window.setTimeout(() => setSendState("idle"), 900);
+    return () => window.clearTimeout(timer);
+  }, [sendState]);
+
+  // Lock synchronously: form submission and both retry actions share this guard.
+  async function runRequest(action: () => Promise<unknown>, retrying = false) {
+    if (requestLock.current || isGenerating) return;
+    requestLock.current = true;
+    submissionAcknowledged.current = false;
+    setSendState("loading");
+    setIsRetrying(retrying);
+    clearError();
+    try {
+      await action();
+    } catch {
+      if (mounted.current) setSendState("error");
+    } finally {
+      requestLock.current = false;
+      if (mounted.current) setIsRetrying(false);
+    }
+  }
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -66,12 +111,13 @@ export function StudyFlowChat() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedInput = input.trim();
-    if (!trimmedInput || isGenerating) return;
-    clearError();
+    if (requestLock.current || isGenerating) return;
+    if (!trimmedInput && sendState === "error") { void handleRetry(); return; }
+    if (!trimmedInput) return;
     setInput("");
     isPinnedRef.current = true;
     setShowJump(false);
-    void sendMessage({ text: trimmedInput });
+    void runRequest(() => sendMessage({ text: trimmedInput }));
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -82,14 +128,7 @@ export function StudyFlowChat() {
   }
 
   async function handleRetry() {
-    if (isGenerating) return;
-    setIsRetrying(true);
-    clearError();
-    try {
-      await regenerate();
-    } finally {
-      setIsRetrying(false);
-    }
+    await runRequest(() => regenerate(), true);
   }
 
   return <section className="relative flex h-[calc(100dvh-13rem)] min-h-[28rem] flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-white shadow-[0_12px_32px_rgba(16,24,40,0.05)]" aria-label="StudyFlow AI chat">
@@ -100,7 +139,10 @@ export function StudyFlowChat() {
     </div>
 
     {showJump && <button type="button" onClick={jumpToLatest} className="absolute bottom-28 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-md transition-colors hover:bg-blue-50"><ArrowDown size={14} aria-hidden="true" />Jump to latest</button>}
-    <div className="border-t border-[var(--line)] bg-slate-50/70 p-3 sm:p-5"><form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl items-end gap-2 rounded-lg border border-[var(--line)] bg-white p-2 shadow-sm focus-within:border-blue-400"><label htmlFor="studyflow-message" className="sr-only">Message StudyFlow AI</label><textarea ref={composerRef} id="studyflow-message" value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={handleKeyDown} rows={1} placeholder="Ask about your study plan, courses, or next task..." className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-3 text-sm leading-5 text-slate-800 outline-none placeholder:text-slate-400" />{isGenerating ? <button type="button" onClick={() => void stop()} className="flex h-11 shrink-0 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-semibold text-white transition-colors hover:bg-slate-700" aria-label="Stop generating"><Square size={14} fill="currentColor" aria-hidden="true" /><span>Stop</span></button> : <button type="submit" disabled={!input.trim()} className="flex h-11 shrink-0 items-center gap-2 rounded-md bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400" aria-label="Send message"><Send size={15} aria-hidden="true" /><span className="hidden sm:inline">Send</span></button>}</form><p className="mx-auto mt-2 max-w-3xl px-2 text-[11px] text-slate-400">Enter to send · Shift+Enter for a new line</p></div>
+    <div className="border-t border-[var(--line)] bg-slate-50/70 p-3 sm:p-5"><form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl flex-wrap items-end gap-2 rounded-lg border border-[var(--line)] bg-white p-2 shadow-sm focus-within:border-blue-400"><label htmlFor="studyflow-message" className="sr-only">Message StudyFlow AI</label><textarea ref={composerRef} id="studyflow-message" value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={handleKeyDown} rows={1} placeholder="Ask about your study plan, courses, or next task..." className="max-h-32 min-h-11 min-w-[8rem] flex-1 resize-none bg-transparent px-2 py-3 text-sm leading-5 text-slate-800 outline-none placeholder:text-slate-400" /><div className="flex shrink-0 flex-wrap justify-end gap-2">
+      <AnimatedSendButton state={sendState === "error" && input.trim() ? "idle" : sendState} type="submit" disabled={isGenerating || (!input.trim() && sendState !== "error")} />
+      {isGenerating && <button type="button" onClick={() => void stop()} className="flex h-11 shrink-0 items-center gap-2 rounded-md bg-slate-900 px-3 text-sm font-semibold text-white transition-colors hover:bg-slate-700" aria-label="Stop generating"><Square size={14} fill="currentColor" aria-hidden="true" /><span>Stop</span></button>}
+    </div></form><p className="mx-auto mt-2 max-w-3xl px-2 text-[11px] text-slate-400">Enter to send · Shift+Enter for a new line</p></div>
   </section>;
 }
 

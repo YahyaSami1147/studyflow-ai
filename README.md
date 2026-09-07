@@ -134,6 +134,14 @@ localStorage.removeItem("studyflow-failure-test")
 
 To test the route-level error boundary locally, temporarily add `throw new Error("Local route test")` at the top of `src/app/ai/page.tsx`, open `/ai`, confirm the Try again UI appears, then remove the line before committing.
 
+## Animated Send button assignment
+
+The controlled `src/components/animated-send-button.tsx` component is shared by the real `/ai` chat and the reviewer page at [`/motion-demo`](http://localhost:3000/motion-demo). It supports idle, hover, pressed, keyboard focus, loading, success and error, plus a separate disabled prop. The chat keeps streaming and Stop, shows Sent for 900ms only after successful completion, and offers Retry for a failed request when the composer is empty. Typing a new message enables a new send; the existing Retry response action remains available.
+
+The demo offers **Force Success**, **Force Error**, and **Random** (80% success), using a cancellable 1.1-second simulated request with no backend calls. Changing modes affects the next attempt. Clear its input to inspect Disabled.
+
+Motion uses 160ms hover/press and 280ms feedback transitions with ease-out, transform and opacity, and a stable button width. Native buttons, visible focus, busy/disabled semantics and polite status announcements provide accessible feedback. Reduced motion removes translation, scaling and spinner rotation while retaining labels, icons, colors and focus. Request locks prevent duplicate submissions; timers are cleaned up on interruption and unmount.
+
 ## Security
 
 - `NVIDIA_API_KEY` is server-side only.
