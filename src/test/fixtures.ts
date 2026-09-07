@@ -58,6 +58,7 @@ export const quiz: StudyQuiz = {
         { id: "q2-d", text: "[Component]" },
       ],
       correctOptionId: "q2-a",
+      explanation: "JSX is the syntax used to render a component element.",
     },
   ],
 };

@@ -78,4 +78,22 @@ describe("StudyQuizToolCard", () => {
     expect(screen.getByRole("radio", { name: "useState" })).not.toBeChecked();
     expect(screen.getByRole("heading", { name: "React Fundamentals" })).toBeInTheDocument();
   });
+
+  it("reveals each submitted explanation independently", async () => {
+    const user = userEvent.setup();
+    render(<StudyQuizToolCard part={makeQuizPart()} />);
+
+    expect(screen.queryByRole("button", { name: "Why is this the correct answer?" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "useState" }));
+    await user.click(screen.getByRole("radio", { name: "render Component" }));
+    await user.click(screen.getByRole("button", { name: "Submit quiz" }));
+
+    const disclosures = screen.getAllByRole("button", { name: "Why is this the correct answer?" });
+    expect(disclosures).toHaveLength(2);
+    expect(screen.queryByText("useState stores local component state.")).not.toBeVisible();
+    expect(screen.queryByText("JSX is the syntax used to render a component element.")).not.toBeVisible();
+    await user.click(disclosures[0]);
+    expect(screen.getByText("useState stores local component state.")).toBeVisible();
+    expect(screen.queryByText("JSX is the syntax used to render a component element.")).not.toBeVisible();
+  });
 });

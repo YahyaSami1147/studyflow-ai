@@ -105,6 +105,8 @@ Open [http://localhost:3000](http://localhost:3000). StudyFlow AI is available a
 
 Vitest and React Testing Library tests are colocated with the source under `src/**/*.test.ts` and `src/**/*.test.tsx`.
 
+Course Detail uses the shared accessible Tabs component for Overview, Assignments, Notes, and Progress. Quiz review explanations use independent accessible Disclosure controls. StudyFlow's existing native dialog components remain the canonical modal system.
+
 ## Streaming AI Assignment
 
 This repository is the continuing StudyFlow capstone. The streaming AI functionality was added as a Build (Core) assignment; the entire StudyFlow application was not created for this assignment.
