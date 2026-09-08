@@ -22,7 +22,11 @@ async function openScene(page: Page, options: { requireWebGL?: boolean } = {}) {
     return ready || fallbackVisible;
   }, { timeout: 15000 }).toBeTruthy();
 
-  if (await fallback.isVisible().catch(() => false)) {
+  const fallbackVisible = await fallback.isVisible().catch(() => false);
+  if (fallbackVisible) {
+    if (requireWebGL) {
+      return null;
+    }
     return null;
   }
 
@@ -113,7 +117,9 @@ test("manual orbit and zoom continue to work after automatic focus", async ({ pa
   test.skip(isMobile && browserName === "webkit", "Mobile WebKit does not support page.mouse.wheel(); the touch/pinch coverage exercises the equivalent interaction path.");
   const canvas = await open3DScene(page);
   const initialTarget = await canvas.getAttribute("data-camera-target");
-  await page.getByRole("button", { name: "Select Mathematics", exact: true }).click({ force: browserName === "webkit" });
+  const selectMath = page.getByRole("button", { name: "Select Mathematics", exact: true });
+  await expect(selectMath).toBeVisible({ timeout: 20000 });
+  await selectMath.click({ force: browserName === "webkit" || browserName === "firefox" });
   await expect(page.getByRole("complementary", { name: "Selected knowledge" })).toContainText("Mathematics");
   await expect(canvas).toHaveAttribute("data-camera-target", /\d/);
   // The snapshot updates at the end of the focus transition.
@@ -164,8 +170,12 @@ for (const width of [375, 390, 430]) {
       const initialTarget = await canvas.getAttribute("data-camera-target");
       const stage = page.getByTestId("constellation-stage");
       await stage.scrollIntoViewIfNeeded();
-      await tap(page, page.getByRole("button", { name: "Enable touch exploration", exact: true }));
-      await tap(page, page.getByRole("button", { name: "Select Mathematics", exact: true }));
+      const enableTouch = page.getByRole("button", { name: "Enable touch exploration", exact: true });
+      const selectMath = page.getByRole("button", { name: "Select Mathematics", exact: true });
+      await expect(enableTouch).toBeVisible({ timeout: 20000 });
+      await tap(page, enableTouch);
+      await expect(selectMath).toBeVisible({ timeout: 20000 });
+      await tap(page, selectMath);
       const selected = page.getByRole("complementary", { name: "Selected knowledge" });
       await expect(selected.getByRole("heading", { name: "Mathematics", exact: true })).toBeVisible();
       await expect.poll(async () => canvas.getAttribute("data-camera-target")).not.toBe(initialTarget);
@@ -265,9 +275,11 @@ test("unsupported WebGL retains progress and selection in an accessible fallback
   await expect(page.getByRole("complementary", { name: "Selected knowledge" }).getByRole("heading", { name: "Probability", exact: true })).toBeVisible();
 });
 
-test("WebGL context loss fails independently and preserves selected knowledge", async ({ page }) => {
+test("WebGL context loss fails independently and preserves selected knowledge", async ({ page, browserName }) => {
   const canvas = await open3DScene(page);
-  await page.getByRole("button", { name: "Select Mathematics", exact: true }).click();
+  const selectMath = page.getByRole("button", { name: "Select Mathematics", exact: true });
+  await expect(selectMath).toBeVisible({ timeout: 20000 });
+  await selectMath.click({ force: browserName === "webkit" });
   await canvas.dispatchEvent("webglcontextlost", { cancelable: true });
   await expect(page.getByText("Explore your knowledge in 2D", { exact: true })).toBeVisible();
   await expect(page.getByRole("complementary", { name: "Selected knowledge" }).getByRole("heading", { name: "Mathematics", exact: true })).toBeVisible();
