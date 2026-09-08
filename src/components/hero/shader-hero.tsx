@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FRAGMENT_SHADER, VERTEX_SHADER } from "@/components/hero/shader-source";
 
-// Reduced motion uses a static StudyFlow gradient, while animated mode caps DPR and pauses rendering when the document is hidden.
+// Reduced-motion users get a static StudyFlow gradient; animated mode caps DPR and fully pauses RAF while the tab is hidden.
 type MouseState = {
   x: number;
   y: number;
@@ -126,15 +126,16 @@ export function ShaderHero() {
 
     const handlePointerMove = (event: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
-      mouseRef.current.x = event.clientX - rect.left;
-      mouseRef.current.y = event.clientY - rect.top;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      mouseRef.current.x = (event.clientX - rect.left) * scaleX;
+      mouseRef.current.y = (event.clientY - rect.top) * scaleY;
     };
 
     const handlePointerLeave = () => {
-      const rect = canvas.getBoundingClientRect();
       mouseRef.current = {
-        x: rect.width * 0.5,
-        y: rect.height * 0.5,
+        x: canvas.width * 0.5,
+        y: canvas.height * 0.5,
       };
     };
 

@@ -173,12 +173,12 @@ function StatTile({ label, value, tone }: { label: string; value: string; tone: 
 
 function EmptyProgressState() {
   return (
-    <section className="rounded-[var(--radius-card)] border border-dashed border-[var(--line)] bg-slate-950/30 px-6 py-16 text-center sm:px-10">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-300">
+    <section className="flex flex-col items-center rounded-[var(--radius-card)] border border-dashed border-[var(--line)] bg-slate-950/30 px-6 py-16 text-center sm:px-10">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-300">
         <Gauge size={22} aria-hidden="true" />
       </div>
       <h2 className="mt-5 text-xl font-semibold tracking-tight text-white">No progress to show yet</h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-300">Add a course and start completing assignments and tasks to build your StudyFlow progress.</p>
+      <p className="mx-auto mt-2 w-full max-w-lg text-center text-sm leading-6 text-slate-300">Add a course and start completing assignments and tasks to build your StudyFlow progress.</p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link href="/courses" className="inline-flex h-10 items-center gap-2 rounded-md bg-cyan-400 px-4 text-sm font-semibold text-slate-950 hover:bg-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Add course <ArrowRight size={16} aria-hidden="true" /></Link>
         <Link href="/tasks" className="inline-flex h-10 items-center rounded-md border border-[var(--line)] bg-slate-900/60 px-4 text-sm font-semibold text-white hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">View tasks</Link>
