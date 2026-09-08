@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { SphereGeometry, WebGLRenderer, type Group } from "three";
 import { ConnectionLine } from "./connection-line";
 import { ConstellationCamera } from "./constellation-camera";
+import { GalaxyBackground } from "./galaxy-background";
 import { KnowledgeNode } from "./knowledge-node";
 import { nodePosition, subjectFor } from "./scene-layout";
 import type { ConstellationSceneProps } from "./types";
@@ -61,12 +62,23 @@ function SpatialDust({ compact }: { compact: boolean }) {
 function KnowledgeGraph(props: ConstellationSceneProps) {
   const { nodes, selectedId, filter, reducedMotion, compact, onSelect } = props;
   const objects = useRef(new Map<string, Group>());
+  const reveal = useRef<Group>(null);
+  const revealProgress = useRef(0);
+  const invalidate = useThree((state) => state.invalidate);
   const geometry = useMemo(() => new SphereGeometry(1, compact ? 16 : 24, compact ? 12 : 16), [compact]);
   const register = useCallback((id: string, object: Group | null) => {
     if (object) objects.current.set(id, object);
     else objects.current.delete(id);
   }, [objects]);
   useEffect(() => () => geometry.dispose(), [geometry]);
+
+  useFrame((_, delta) => {
+    if (!reveal.current || reducedMotion) return;
+    revealProgress.current = Math.min(1, revealProgress.current + delta / 1.15);
+    const eased = 1 - Math.pow(1 - revealProgress.current, 3);
+    reveal.current.scale.setScalar(0.985 + eased * 0.015);
+    if (revealProgress.current < 1) invalidate();
+  }, -3);
 
   const selected = nodes.find((node) => node.id === selectedId);
   const activeSubject = subjectFor(selected);
@@ -95,6 +107,8 @@ function KnowledgeGraph(props: ConstellationSceneProps) {
     <>
       <color attach="background" args={["#060e1d"]} />
       <fog attach="fog" args={["#060e1d", 24, 58]} />
+      <group ref={reveal} scale={reducedMotion ? 1 : 0.985}>
+      <GalaxyBackground compact={compact} reducedMotion={reducedMotion} />
       <hemisphereLight args={["#a8daff", "#111427", 1.7]} />
       <directionalLight position={[-3, 7, 8]} color="#d2f2ff" intensity={2.4} />
       <pointLight position={[4, -2, 4]} color="#9b8bff" intensity={14} distance={18} decay={2} />
@@ -131,6 +145,7 @@ function KnowledgeGraph(props: ConstellationSceneProps) {
       })}
       <ConstellationCamera nodes={nodes} selectedId={selectedId} resetKey={props.resetKey} compact={compact} reducedMotion={reducedMotion} enabled={props.interactionEnabled} />
       <SceneHealth onReady={props.onReady} onError={props.onError} />
+      </group>
     </>
   );
 }

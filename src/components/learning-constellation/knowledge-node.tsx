@@ -3,7 +3,7 @@
 import { Html } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Color, type Group, type MeshStandardMaterial, type SphereGeometry, Vector3 } from "three";
+import { AdditiveBlending, Color, type Group, MeshBasicMaterial, type Mesh, type MeshStandardMaterial, type SphereGeometry, Vector3 } from "three";
 import type { KnowledgeNodeData, Position3D } from "./types";
 
 interface KnowledgeNodeProps {
@@ -27,6 +27,8 @@ export function KnowledgeNode({
   const group = useRef<Group>(null);
   const body = useRef<Group>(null);
   const surface = useRef<MeshStandardMaterial>(null);
+  const halo = useRef<MeshBasicMaterial>(null);
+  const energyRing = useRef<Mesh>(null);
   const invalidate = useThree((state) => state.invalidate);
   const [hovered, setHovered] = useState(false);
   const destination = useMemo(() => new Vector3(...target), [target]);
@@ -42,10 +44,13 @@ export function KnowledgeNode({
     if (!group.current || !body.current || !surface.current) return;
     const blend = reducedMotion ? 1 : 1 - Math.exp(-8 * Math.min(delta, 0.06));
     group.current.position.lerp(destination, blend);
-    const nextScale = body.current.scale.x + (scale - body.current.scale.x) * blend;
+    const breathing = !reducedMotion && node.kind !== "topic" && !selected ? 1 + Math.sin(performance.now() * 0.0012 + node.position[0]) * 0.012 : 1;
+    const nextScale = body.current.scale.x + (scale * breathing - body.current.scale.x) * blend;
     body.current.scale.setScalar(nextScale);
     surface.current.color.lerp(tint, blend);
     surface.current.emissiveIntensity += (emission - surface.current.emissiveIntensity) * blend;
+    if (halo.current) halo.current.opacity += (((selected ? 0.13 : node.kind === "topic" ? 0.025 : 0.055) * (dimmed ? 0.35 : 1)) - halo.current.opacity) * blend;
+    if (energyRing.current && !reducedMotion) energyRing.current.rotation.z += delta * (selected ? 0.22 : 0.04);
     if (group.current.position.distanceToSquared(destination) > 0.000001 ||
       Math.abs(nextScale - scale) > 0.001 ||
       Math.abs(surface.current.emissiveIntensity - emission) > 0.001 ||
@@ -53,7 +58,7 @@ export function KnowledgeNode({
       invalidate();
     } else {
       group.current.position.copy(destination);
-      body.current.scale.setScalar(scale);
+      body.current.scale.setScalar(scale * breathing);
     }
   }, -1);
 
@@ -66,6 +71,9 @@ export function KnowledgeNode({
   return (
     <group ref={(object) => { group.current = object; register(node.id, object); }} position={node.position}>
       <group ref={body}>
+        <mesh geometry={geometry} scale={radius * (node.kind === "topic" ? 1.55 : 1.7)} renderOrder={1}>
+          <meshBasicMaterial ref={halo} color={node.color} transparent opacity={node.kind === "topic" ? 0.025 : 0.055} blending={AdditiveBlending} depthWrite={false} />
+        </mesh>
         <mesh
           geometry={geometry}
           scale={radius}
@@ -115,6 +123,12 @@ export function KnowledgeNode({
             <meshBasicMaterial color={selected ? "#f0f9ff" : "#fbbf24"} />
           </mesh>
         )}
+        {selected && <group ref={energyRing} rotation={[0.2, -0.16, 0.1]}>
+          <mesh>
+            <torusGeometry args={[radius * 1.88, node.kind === "topic" ? 0.014 : 0.022, 6, 64]} />
+            <meshBasicMaterial color={node.color} transparent opacity={0.5} blending={AdditiveBlending} depthWrite={false} />
+          </mesh>
+        </group>}
       </group>
       {showLabel && (
         <Html center position={[0, -radius * (selected ? 2 : 1.65) - 0.22, 0]} zIndexRange={[12, 1]} style={{ pointerEvents: "none" }}>

@@ -21,6 +21,14 @@ export function ConstellationCamera({ nodes, selectedId, resetKey, compact, redu
   const { camera, gl, invalidate, size } = useThree();
   const eventSurface = useThree((state) => state.events.connected);
   const transition = useRef({ active: false, target: new Vector3(), position: new Vector3() });
+  const lastInteraction = useRef(0);
+  const idleBase = useRef(new Vector3());
+  const idleOffset = useRef(new Vector3());
+  const idleStarted = useRef(false);
+
+  useEffect(() => {
+    lastInteraction.current = performance.now();
+  }, []);
 
   useEffect(() => {
     // OrbitControls sets touch-action on connect even while disabled. Restore page scrolling
@@ -59,10 +67,13 @@ export function ConstellationCamera({ nodes, selectedId, resetKey, compact, redu
       distance = Math.max(width / (2 * halfFov * aspect), height / (2 * halfFov), 12.5);
       center.y = 0.1;
     }
+    distance = Math.min(40, distance * (compact ? 1.18 : 1));
     // A consistent front-facing focus keeps concept labels readable, then yields to manual orbit.
     transition.current.target.copy(center);
     transition.current.position.copy(center).add(new Vector3(0.35, 0.7, distance));
     transition.current.active = true;
+    lastInteraction.current = performance.now();
+    idleStarted.current = false;
     orbit.enableDamping = false;
     gl.domElement.setAttribute("data-camera-moving", reducedMotion ? "false" : "true");
     invalidate();
@@ -89,8 +100,21 @@ export function ConstellationCamera({ nodes, selectedId, resetKey, compact, redu
     }
   }, -2);
 
-  useFrame(() => {
-    if (!transition.current.active) recordView();
+  useFrame((_, delta) => {
+    const orbit = controls.current;
+    if (!orbit || transition.current.active) return;
+    if (!reducedMotion && !compact && enabled && performance.now() - lastInteraction.current > 3600) {
+      if (!idleStarted.current) {
+        idleBase.current.copy(camera.position);
+        idleStarted.current = true;
+      }
+      idleOffset.current.copy(idleBase.current).sub(orbit.target);
+      idleOffset.current.applyAxisAngle(new Vector3(0, 1, 0), Math.sin(performance.now() * 0.00022) * 0.012);
+      camera.position.lerp(idleOffset.current.add(orbit.target), 1 - Math.exp(-0.7 * delta));
+      orbit.update();
+      invalidate();
+    }
+    recordView();
   }, -1);
 
   return (
@@ -111,11 +135,17 @@ export function ConstellationCamera({ nodes, selectedId, resetKey, compact, redu
       zoomSpeed={0.7}
       onStart={() => {
         transition.current.active = false;
+        lastInteraction.current = performance.now();
+        idleStarted.current = false;
         if (controls.current) controls.current.enableDamping = !reducedMotion;
         gl.domElement.setAttribute("data-camera-moving", "false");
       }}
       onChange={recordView}
-      onEnd={recordView}
+      onEnd={() => {
+        lastInteraction.current = performance.now();
+        idleStarted.current = false;
+        recordView();
+      }}
     />
   );
 }
