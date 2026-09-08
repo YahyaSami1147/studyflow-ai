@@ -221,6 +221,7 @@ This project does not claim a dedicated observability service beyond the current
 - cloud synchronization and authentication
 - richer study analytics and mastery tracking
 - deeper structured AI study planning
+- AI-assisted task and assignment creation based on course context and workload
 - shared production rate limiting and distributed API protection
 - larger graph rendering and more advanced 3D optimization
 
