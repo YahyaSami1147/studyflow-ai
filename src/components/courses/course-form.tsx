@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { FeedbackMessage } from "@/components/feedback-message";
 import type { Course, NewCourse } from "@/types/studyflow";
 
 const COURSE_COLORS = [
@@ -77,7 +78,7 @@ export function CourseForm({ initialCourse, onSubmit, onCancel }: CourseFormProp
           ))}
         </div>
       </fieldset>
-      {error && <p id="course-form-error" role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800">{error}</p>}
+      {error && <div id="course-form-error"><FeedbackMessage variant="error">{error}</FeedbackMessage></div>}
       <div className="flex flex-col-reverse gap-2 border-t border-[var(--line)] pt-5 sm:flex-row sm:justify-end">
         <button type="button" onClick={onCancel} className="h-10 rounded-md border border-[var(--line)] px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Cancel</button>
         <button type="submit" disabled={!name.trim()} className="h-10 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">{initialCourse ? "Save changes" : "Add course"}</button>

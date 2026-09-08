@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Check, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { FeedbackMessage } from "@/components/feedback-message";
 import { useStudyFlow } from "@/providers/studyflow-provider";
 
 export function SettingsWorkspace() {
@@ -80,7 +81,7 @@ export function SettingsWorkspace() {
         </div>
       </section>
 
-      {status ? <p role="status" className="mt-6 inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800"><Check size={15} aria-hidden="true" />{status}</p> : null}
+      {status ? <div className="mt-6"><FeedbackMessage variant="success">{status}</FeedbackMessage></div> : null}
 
       <ConfirmDialog
         open={resetOpen}

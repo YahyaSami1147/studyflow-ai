@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { FeedbackMessage } from "@/components/feedback-message";
 import { ASSIGNMENT_STATUS_OPTIONS, PRIORITY_OPTIONS, toDateInputValue, toStoredDate } from "@/lib/studyflow-format";
 import type { Assignment, Course, NewAssignment } from "@/types/studyflow";
 
@@ -62,7 +63,7 @@ export function AssignmentForm({ courses, initialAssignment, onSubmit, onCancel 
         <SelectField id="assignment-status" label="Status" value={status} options={ASSIGNMENT_STATUS_OPTIONS} onChange={setStatus} />
         <SelectField id="assignment-priority" label="Priority" value={priority} options={PRIORITY_OPTIONS} onChange={setPriority} />
       </div>
-      {error && <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800">{error}</p>}
+      {error && <FeedbackMessage variant="error">{error}</FeedbackMessage>}
       <div className="flex flex-col-reverse gap-2 border-t border-[var(--line)] pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={onCancel} className="h-10 rounded-md border border-[var(--line)] px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Cancel</button><button type="submit" disabled={!title.trim() || !courseId || !dueDate} className="h-10 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">{initialAssignment ? "Save changes" : "Add assignment"}</button></div>
     </form>
   );

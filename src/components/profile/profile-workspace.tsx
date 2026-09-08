@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Save, UserCircle } from "lucide-react";
+import { FeedbackMessage } from "@/components/feedback-message";
 import { useStudyFlow } from "@/providers/studyflow-provider";
 
 export function ProfileWorkspace() {
@@ -83,8 +84,8 @@ export function ProfileWorkspace() {
             <input id="profile-university" value={form.university} onChange={(event) => updateField("university", event.target.value)} className="h-11 w-full rounded-md border border-[var(--line)] bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Your university" />
           </div>
 
-          {error ? <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800">{error}</p> : null}
-          {status ? <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">{status}</p> : null}
+          {error ? <FeedbackMessage variant="error">{error}</FeedbackMessage> : null}
+          {status ? <FeedbackMessage variant="success">{status}</FeedbackMessage> : null}
 
           <div className="flex flex-col-reverse gap-2 border-t border-[var(--line)] pt-5 sm:flex-row sm:justify-end">
             <button type="button" onClick={() => setForm({ name: data.profile.name ?? "", program: data.profile.program ?? "", semester: data.profile.semester ?? "", university: data.profile.university ?? "" })} className="h-10 rounded-md border border-[var(--line)] px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Reset form</button>

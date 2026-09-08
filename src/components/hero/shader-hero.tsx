@@ -140,15 +140,10 @@ export function ShaderHero() {
 
     let elapsedTime = 0;
     let lastTimestamp = 0;
-    let rafId = 0;
+    let rafId: number | null = null;
+    let running = false;
 
     const render = (timestamp: number) => {
-      if (document.hidden) {
-        lastTimestamp = 0;
-        rafId = window.requestAnimationFrame(render);
-        return;
-      }
-
       if (lastTimestamp === 0) {
         lastTimestamp = timestamp;
       }
@@ -170,9 +165,27 @@ export function ShaderHero() {
       rafId = window.requestAnimationFrame(render);
     };
 
+    const stopAnimation = () => {
+      running = false;
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+
+    const startAnimation = () => {
+      if (running || document.hidden) return;
+      running = true;
+      lastTimestamp = 0;
+      rafId = window.requestAnimationFrame(render);
+    };
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        stopAnimation();
         lastTimestamp = 0;
+      } else {
+        startAnimation();
       }
     };
 
@@ -182,10 +195,10 @@ export function ShaderHero() {
     canvas.addEventListener("pointerleave", handlePointerLeave);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    rafId = window.requestAnimationFrame(render);
+    startAnimation();
 
     return () => {
-      window.cancelAnimationFrame(rafId);
+      stopAnimation();
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", handlePointerMove);
       canvas.removeEventListener("pointerleave", handlePointerLeave);

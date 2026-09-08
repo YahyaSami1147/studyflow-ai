@@ -55,14 +55,14 @@ export function ConfirmDialog({
       }}
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-description"
-      className="w-[calc(100%-2rem)] max-w-md rounded-[var(--radius-card)] border border-[var(--line)] bg-white p-0 text-slate-950 shadow-[0_24px_60px_rgba(16,24,40,0.2)] backdrop:bg-slate-950/40"
+      className="w-[calc(100%-2rem)] max-w-md rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-elevated)] p-0 text-white shadow-[0_24px_60px_rgba(2,6,23,0.6)] backdrop:bg-slate-950/70"
     >
       <div className="p-6 sm:p-7">
         <h2 id="confirm-dialog-title" className="text-lg font-semibold tracking-tight">{title}</h2>
         <p id="confirm-dialog-description" className="mt-2 text-sm leading-6 text-[var(--muted)]">{description}</p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button type="button" onClick={() => cancel()} className="h-10 rounded-md border border-[var(--line)] px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Cancel</button>
-          <button ref={confirmRef} type="button" onClick={onConfirm} className="h-10 rounded-md bg-red-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">{confirmLabel}</button>
+          <button type="button" onClick={() => cancel()} className="h-10 rounded-md border border-[var(--line)] bg-slate-900/60 px-4 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Cancel</button>
+          <button ref={confirmRef} type="button" onClick={onConfirm} className="h-10 rounded-md border border-red-400/30 bg-red-500/15 px-4 text-sm font-semibold text-red-100 transition-colors hover:bg-red-500/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300">{confirmLabel}</button>
         </div>
       </div>
     </dialog>

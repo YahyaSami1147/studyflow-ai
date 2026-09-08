@@ -220,6 +220,35 @@ textarea::placeholder {
 	color: inherit !important;
 }
 
+.bg-emerald-50 {
+	background-color: rgba(52, 211, 153, 0.1) !important;
+}
+
+.bg-red-50 {
+	background-color: rgba(248, 113, 113, 0.1) !important;
+}
+
+.bg-amber-50 {
+	background-color: rgba(251, 191, 36, 0.1) !important;
+}
+
+.text-emerald-800,
+.text-emerald-900 {
+	color: var(--success) !important;
+}
+
+.text-red-700,
+.text-red-800,
+.text-red-900 {
+	color: var(--danger) !important;
+}
+
+.text-amber-700,
+.text-amber-800,
+.text-amber-900 {
+	color: var(--warning) !important;
+}
+
 .bg-blue-600 {
 	background-color: var(--primary) !important;
 }
@@ -240,6 +269,17 @@ textarea::placeholder {
 [role="status"],
 [role="alert"] {
 	backdrop-filter: blur(0.5px);
+}
+
+.feedback-message {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.625rem;
+	border-width: 1px;
+	border-radius: 0.5rem;
+	padding: 0.75rem 0.875rem;
+	font-size: 0.875rem;
+	line-height: 1.5;
 }
 
 .page-header {
