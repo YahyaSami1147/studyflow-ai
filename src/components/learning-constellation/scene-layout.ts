@@ -6,12 +6,11 @@ export function nodePosition(
   nodes: KnowledgeNodeData[],
   activeSubject: string | null,
 ): Position3D {
-  if (node.kind !== "topic" || node.parentId !== activeSubject) return node.position;
+  if (node.kind !== "topic") return node.position;
   const parent = nodes.find((candidate) => candidate.id === node.parentId);
   if (!parent) return node.position;
-  return node.position.map((value, axis) =>
-    parent.position[axis] + (value - parent.position[axis]) * 1.4,
-  ) as Position3D;
+  const expansion = node.parentId === activeSubject ? 1.4 : 1;
+  return node.position.map((value, axis) => parent.position[axis] + value * expansion) as Position3D;
 }
 
 export function subjectFor(node: KnowledgeNodeData | undefined): string | null {

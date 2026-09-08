@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadStudyFlowData, STUDYFLOW_STORAGE_KEY } from "@/lib/studyflow-storage";
 import type { StudyFlowData } from "@/types/studyflow";
-import { buildConstellationFromStudyData } from "./constellation-data-adapter";
+import { buildConstellationFromStudyData, layoutChildPositions, layoutCoursePositions } from "./constellation-data-adapter";
 
 const now = new Date("2026-01-15T12:00:00.000Z");
 const dates = { createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-10T00:00:00.000Z" };
@@ -20,6 +20,24 @@ function studyData(overrides: Partial<StudyFlowData> = {}): StudyFlowData {
 }
 
 const course = { id: "course-1", name: "Biology", description: "Cells and systems.", color: "#22c55e", ...dates };
+
+function pointDistance(first: [number, number, number], second: [number, number, number]): number {
+  return Math.hypot(first[0] - second[0], first[1] - second[1], first[2] - second[2]);
+}
+
+function requiredCourseDistance(firstCount: number, secondCount: number): number {
+  return 1.35 + Math.sqrt(Math.max(firstCount, 1)) * 0.55 + 1.35 + Math.sqrt(Math.max(secondCount, 1)) * 0.55 + 0.85;
+}
+
+function assertCourseSpacing(count: number) {
+  const inputs = Array.from({ length: count }, (_, index) => ({ id: `course-${index}`, childCount: index % 4 + 1 }));
+  const positions = [...layoutCoursePositions(inputs).values()];
+  for (let first = 0; first < inputs.length; first += 1) {
+    for (let second = first + 1; second < inputs.length; second += 1) {
+      expect(pointDistance(positions[first], positions[second])).toBeGreaterThanOrEqual(requiredCourseDistance(inputs[first].childCount, inputs[second].childCount) - 0.02);
+    }
+  }
+}
 
 describe("buildConstellationFromStudyData", () => {
   it("returns only the honest synthetic root for empty data", () => {
@@ -68,5 +86,18 @@ describe("buildConstellationFromStudyData", () => {
   it("does not throw when the shared storage contains invalid JSON", () => {
     window.localStorage.setItem(STUDYFLOW_STORAGE_KEY, "{not-json");
     expect(loadStudyFlowData()).toMatchObject({ courses: [], assignments: [], tasks: [] });
+  });
+
+  it.each([1, 5, 8, 12])("keeps %i course centers separated", (count) => {
+    assertCourseSpacing(count);
+  });
+
+  it("keeps ten children separated inside one course cluster", () => {
+    const positions = [...layoutChildPositions("course-1", Array.from({ length: 10 }, (_, index) => `item-${index}`)).values()];
+    for (let first = 0; first < positions.length; first += 1) {
+      for (let second = first + 1; second < positions.length; second += 1) {
+        expect(pointDistance(positions[first], positions[second])).toBeGreaterThanOrEqual(0.56);
+      }
+    }
   });
 });

@@ -62,12 +62,12 @@ export function ConstellationCamera({ nodes, selectedId, resetKey, compact, redu
       const height = Math.max(...cluster.map((point) => Math.abs(point[1] - center.y))) * 2 + 1.7;
       distance = Math.max(8.4, width / (2 * halfFov * aspect), height / (2 * halfFov));
     } else {
-      const width = Math.max(...nodes.map((node) => Math.abs(node.position[0]))) * 2 + 1.9;
-      const height = Math.max(...nodes.map((node) => Math.abs(node.position[1]))) * 2 + 2.3;
+      const width = Math.max(...nodes.map((node) => Math.abs(node.position[0]))) * 2 + 4.2;
+      const height = Math.max(...nodes.map((node) => Math.abs(node.position[1]))) * 2 + 4.4;
       distance = Math.max(width / (2 * halfFov * aspect), height / (2 * halfFov), 12.5);
       center.y = 0.1;
     }
-    distance = Math.min(40, distance * (compact ? 1.18 : 1));
+    distance = Math.min(54, distance * (compact ? 1.18 : 1));
     // A consistent front-facing focus keeps concept labels readable, then yields to manual orbit.
     transition.current.target.copy(center);
     transition.current.position.copy(center).add(new Vector3(0.35, 0.7, distance));
@@ -126,7 +126,7 @@ export function ConstellationCamera({ nodes, selectedId, resetKey, compact, redu
       enableDamping={!reducedMotion}
       dampingFactor={0.12}
       minDistance={5}
-      maxDistance={40}
+      maxDistance={54}
       minPolarAngle={Math.PI * 0.28}
       maxPolarAngle={Math.PI * 0.7}
       minAzimuthAngle={-Math.PI * 0.42}

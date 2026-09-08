@@ -13,21 +13,71 @@ function hash(value: string): number {
   return result >>> 0;
 }
 
-function positionFor(id: string, radius: number, verticalScale = 0.72): Position3D {
-  const seed = hash(id);
-  const angle = (seed % 360) * Math.PI / 180;
-  const depth = ((seed >>> 8) % 1000) / 1000 - 0.5;
-  return [Math.cos(angle) * radius, Math.sin(angle) * radius * verticalScale, depth * 2.4];
+export interface CourseLayoutInput {
+  id: string;
+  childCount: number;
 }
 
-function subjectPosition(id: string): Position3D {
-  const base = positionFor(`subject:${id}`, 3.35, 0.72);
-  return [base[0], base[1], base[2] * 0.45];
+function clusterRadius(childCount: number): number {
+  return 1.35 + Math.sqrt(Math.max(childCount, 1)) * 0.55;
 }
 
-function topicPosition(subjectId: string, id: string): Position3D {
-  const base = positionFor(`topic:${subjectId}:${id}`, 1.35, 0.82);
-  return base;
+function pushApart(positions: Position3D[], minimumDistance: (first: number, second: number) => number, iterations = 14): Position3D[] {
+  const resolved = positions.map((position) => [...position] as Position3D);
+  for (let iteration = 0; iteration < iterations; iteration += 1) {
+    for (let first = 0; first < resolved.length; first += 1) {
+      for (let second = first + 1; second < resolved.length; second += 1) {
+        const left = resolved[first];
+        const right = resolved[second];
+        const delta: Position3D = [left[0] - right[0], left[1] - right[1], left[2] - right[2]];
+        const actual = Math.hypot(delta[0], delta[1], delta[2]);
+        const required = minimumDistance(first, second);
+        if (actual >= required) continue;
+        const fallbackAngle = (hash(`${first}:${second}`) % 360) * Math.PI / 180;
+        const direction: Position3D = actual > 0.001 ? [delta[0] / actual, delta[1] / actual, delta[2] / actual] : [Math.cos(fallbackAngle), Math.sin(fallbackAngle) * 0.75, 0.2];
+        const amount = (required - Math.max(actual, 0.001)) * 0.52;
+        left[0] += direction[0] * amount;
+        left[1] += direction[1] * amount;
+        left[2] += direction[2] * amount;
+        right[0] -= direction[0] * amount;
+        right[1] -= direction[1] * amount;
+        right[2] -= direction[2] * amount;
+      }
+    }
+  }
+  return resolved;
+}
+
+export function layoutCoursePositions(inputs: CourseLayoutInput[]): Map<string, Position3D> {
+  const count = inputs.length;
+  const candidates = inputs.map((input) => {
+    const seed = hash(`course:${input.id}`);
+    const angle = (seed % 360) * Math.PI / 180;
+    const layer = count < 7 ? 0 : (seed >>> 8) % Math.max(2, Math.ceil(Math.sqrt(count / 3)));
+    const radius = 5.8 + layer * 2.25 + ((seed >>> 16) % 100) / 100 * 0.45;
+    const depth = (((seed >>> 24) % 1000) / 1000 - 0.5) * 3.6;
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.78, depth] as Position3D;
+  });
+  const resolved = pushApart(candidates, (first, second) => clusterRadius(inputs[first].childCount) + clusterRadius(inputs[second].childCount) + 0.85);
+  return new Map(inputs.map((input, index) => [input.id, resolved[index]]));
+}
+
+export function layoutChildPositions(courseId: string, childIds: string[]): Map<string, Position3D> {
+  if (childIds.length === 0) return new Map();
+  const ringCount = Math.max(1, Math.ceil(Math.sqrt(childIds.length / 3)));
+  const perRing = Math.ceil(childIds.length / ringCount);
+  const candidates = childIds.map((id, index) => {
+    const ring = Math.floor(index / perRing);
+    const start = ring * perRing;
+    const ringSize = Math.min(perRing, childIds.length - start);
+    const seed = hash(`topic:${courseId}:${id}`);
+    const phase = (seed % 360) * Math.PI / 180;
+    const angle = phase + (index - start) * Math.PI * 2 / Math.max(ringSize, 1);
+    const radius = 1.35 + ring * 0.9 + Math.sqrt(childIds.length) * 0.08;
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.78, Math.sin(angle * 1.7) * 0.9] as Position3D;
+  });
+  const resolved = pushApart(candidates, () => 0.58, 8);
+  return new Map(childIds.map((id, index) => [id, resolved[index]]));
 }
 
 function itemProgress(item: Assignment | Task): number {
@@ -62,7 +112,7 @@ function itemNextStep(item: Assignment | Task, status: NodeStatus): string {
   return `Start ${item.title}.`;
 }
 
-function topicNode(course: Course, item: Assignment | Task, color: string, now: Date): KnowledgeNodeData {
+function topicNode(course: Course, item: Assignment | Task, color: string, now: Date, position: Position3D): KnowledgeNodeData {
   const status = itemStatus(item, now);
   const id = "completed" in item ? `task:${item.id}` : `assignment:${item.id}`;
   return {
@@ -74,7 +124,7 @@ function topicNode(course: Course, item: Assignment | Task, color: string, now: 
     progress: itemProgress(item),
     mastery: null,
     status,
-    position: topicPosition(course.id, id),
+    position,
     importance: item.priority === "high" ? 0.75 : item.priority === "medium" ? 0.58 : 0.45,
     color,
     description: itemDescription(item),
@@ -106,13 +156,25 @@ function subjectNextStep(course: Course, items: KnowledgeNodeData[]): string {
 export function buildConstellationFromStudyData(data: StudyFlowData, now = new Date()): KnowledgeNodeData[] {
   const subjects: KnowledgeNodeData[] = [];
   const topics: KnowledgeNodeData[] = [];
-
-  for (const [index, course] of data.courses.entries()) {
-    const color = course.color || subjectColors[index % subjectColors.length];
-    const subjectId = `course:${course.id}`;
+  const courseItems = data.courses.map((course) => {
     const assignments = data.assignments.filter((assignment) => assignment.courseId === course.id);
     const tasks = getTasksForCourse(data, course.id);
-    const children = [...assignments, ...tasks].map((item) => topicNode(course, item, color, now));
+    return { course, assignments, tasks, childCount: assignments.length + tasks.length };
+  });
+  const coursePositions = layoutCoursePositions(courseItems.map(({ course, childCount }) => ({ id: course.id, childCount })));
+
+  for (const [index, { course, assignments, tasks }] of courseItems.entries()) {
+    const color = course.color || subjectColors[index % subjectColors.length];
+    const subjectId = `course:${course.id}`;
+    const items = [...assignments, ...tasks];
+    const childIds = items.map((item) => "completed" in item ? `task:${item.id}` : `assignment:${item.id}`);
+    const childPositions = layoutChildPositions(course.id, childIds);
+    const coursePosition = coursePositions.get(course.id) ?? [0, 0, 0];
+    const children = items.map((item) => {
+      const id = "completed" in item ? `task:${item.id}` : `assignment:${item.id}`;
+      const offset = childPositions.get(id) ?? [0, 0, 0];
+      return topicNode(course, item, color, now, offset);
+    });
     const progress = getCourseProgress(data, course.id);
     const subject: KnowledgeNodeData = {
       id: subjectId,
@@ -124,7 +186,7 @@ export function buildConstellationFromStudyData(data: StudyFlowData, now = new D
       progress,
       mastery: null,
       status: subjectStatus(children, progress, now, course, data),
-      position: subjectPosition(course.id),
+      position: coursePosition,
       importance: 1,
       color,
       description: course.description?.trim() || `Your StudyFlow work for ${course.name}.`,
