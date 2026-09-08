@@ -15,6 +15,36 @@ StudyFlow is a student productivity and academic management application that bri
 - Login and registration pages
 - StudyFlow AI streaming assistant
 
+## Learning Constellation - Interactive 3D Experience
+
+### What I built
+
+`/learning-constellation` presents a procedural knowledge map with a central StudyFlow core, one subject node per persisted course, child nodes for persisted assignments and tasks, parent-child connections, and a lightweight spatial particle field. It reads the shared `studyflow:data` localStorage record through `src/lib/studyflow-storage.ts` and normalizes it in `src/components/learning-constellation/constellation-data-adapter.ts` before passing nodes to the 3D layer.
+
+### Interaction
+
+- Orbit and zoom the map with mouse or touch exploration.
+- Select subjects or topics from the 3D scene or the keyboard-accessible topic list.
+- Selecting a node focuses the camera, highlights related connections, dims unrelated nodes, and expands the selected subject cluster.
+- Inspect progress, status, related concepts, and the suggested next StudyFlow action in the detail panel. Mastery is honestly shown as unavailable because the current StudyFlow schema stores no quiz, confidence, or mastery field.
+- Filter topics by all, in progress, needs review, or completed; reset the selection and camera with Reset view.
+
+### Performance note
+
+The scene uses procedural spheres, line geometry, and generated point positions, with no external 3D assets or large textures. The Three/R3F scene is loaded through a client-only dynamic import, and the canvas caps device pixel ratio at `1.5` on desktop and `1.25` on compact devices. The particle field uses 180 points normally and 85 in compact mode. The renderer uses demand-driven frames, refs for camera transitions, shared node geometry, and no per-frame React state updates.
+
+The production build completed successfully and reports `/learning-constellation` as a static route. A production review measured a separate Three/R3F feature chunk at approximately 918 KB raw and 244 KB encoded in this build. In headless Chromium using SwiftShader, desktop and reduced-motion idle windows rendered zero additional frames because the canvas uses demand rendering; the observed interaction windows rendered 31 desktop focus frames and 73 mobile focus frames. These are diagnostic observations, not physical-device FPS measurements. Reduced motion disables floating/pulsing animation and makes camera transitions immediate.
+
+### Accessibility
+
+The non-canvas subject and topic list uses native buttons with selected-state semantics and remains the primary inspection path when WebGL is unavailable. Reset and filter controls are keyboard accessible, Escape resets the view, and a polite live region announces selection changes. On compact touch devices, exploration is opt-in so the page remains scrollable. A loading view is shown while the 3D chunk initializes, and WebGL or context-loss failures replace the canvas with a readable 2D progress view. With no stored courses, the page shows an empty state linking to Courses rather than sample academic data.
+
+### With more time
+
+- Generate concept relationships from course and AI activity.
+- Persist layouts and add explicit concept prerequisites.
+- Use instancing and graph-level culling for substantially larger maps.
+
 ## StudyFlow AI
 
 The `/ai` page provides a real-time chat experience powered by NVIDIA Nemotron 3.5 Lightning. It includes streamed responses, a thinking state before the first token, stop generation with partial response preservation, follow-up messages after stopping, multi-turn context, smart auto-scroll, scroll-up protection, `Jump to latest`, distinct user and assistant messages, and a mobile-responsive chat layout.
