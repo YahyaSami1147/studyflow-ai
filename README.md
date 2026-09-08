@@ -1,3 +1,174 @@
+# StudyFlow AI
+
+StudyFlow AI is a local-first learning productivity workspace for managing courses, assignments, tasks, notes, progress, and AI-supported study. Its Learning Constellation turns the same persisted courses and study work into an interactive, lazy-loaded 3D knowledge map.
+
+## Live Demo
+
+- Production URL: [(https://studyflow-ai-ivory-xi.vercel.app)]
+- Repository: [github.com/YahyaSami1147/studyflow-ai](https://github.com/YahyaSami1147/studyflow-ai)
+
+## Screenshots
+
+The following populated local production screenshots show the main workflows without secrets or debug UI:
+
+![StudyFlow dashboard](public/readme/dashboard.webp)
+![StudyFlow courses](public/readme/courses.webp)
+![StudyFlow AI assistant](public/readme/ai-assistant.webp)
+![Learning Constellation](public/readme/learning-constellation.webp)
+
+## Features
+
+- Course management with course-linked assignments, tasks, and notes
+- Task completion, priorities, due dates, and assignment status
+- Calendar, dashboard, progress, profile, and settings workspaces
+- Local persistence through the shared `studyflow:data` browser record
+- Streaming StudyFlow AI assistant with multi-turn context, stop, retry, partial-response preservation, markdown, and study tools
+- `analyzeStudyProgress` and `createStudyQuiz` AI tools with visible lifecycle cards
+- Responsive keyboard-accessible UI with reduced-motion support
+- Learning Constellation built from real persisted courses, assignments, and tasks
+- WebGL loading, failure, context-loss, and 2D accessible fallbacks
+
+## Tech Stack
+
+- Next.js 16 App Router
+- React 19 and TypeScript
+- Tailwind CSS 4
+- Vercel AI SDK with NVIDIA's OpenAI-compatible API
+- Three.js, React Three Fiber, and Drei
+- Vitest and React Testing Library
+- Playwright with Chromium, Firefox, WebKit, and mobile WebKit projects
+
+## Getting Started
+
+```bash
+git clone https://github.com/YahyaSami1147/studyflow-ai.git
+cd studyflow-ai
+npm install
+copy .env.example .env.local
+npm run dev
+```
+
+On macOS/Linux, replace the `copy` command with `cp .env.example .env.local`.
+
+Open [http://localhost:3000](http://localhost:3000). The AI assistant is at `/ai`; the 3D experience is at `/learning-constellation`.
+
+## Environment Variables
+
+| Variable | Required | Scope | Purpose |
+| --- | --- | --- | --- |
+| `NVIDIA_API_KEY` | Yes for live AI | Server-only | Authenticates requests to NVIDIA's OpenAI-compatible model endpoint. |
+| `STUDYFLOW_ENABLE_FAILURE_TESTS` | Optional, development only | Server-only | Enables documented local failure hooks for AI error-state testing. Keep `false` in production. |
+
+Create `.env.local` from `.env.example`. Never commit `.env.local` or put `NVIDIA_API_KEY` in a `NEXT_PUBLIC_*` variable.
+
+## Architecture
+
+```text
+StudyFlow UI
+├─ Courses / Assignments / Tasks / Notes
+│  └─ StudyFlowProvider → localStorage["studyflow:data"]
+├─ Learning Constellation
+│  └─ constellation-data-adapter → lazy R3F/Three.js scene
+└─ AI Assistant
+	└─ /api/chat → validation → NVIDIA model stream
+```
+
+Server components provide the application shell and routes by default. Client components own browser state, local persistence hydration, chat interaction, and WebGL. The AI API route stays server-side so the provider key is never sent to the browser.
+
+## Key Engineering Decisions
+
+### Local-first persistence
+
+StudyFlow currently stores its normalized application record under `studyflow:data`. The shared storage utility validates and defensively normalizes the record. The constellation reads that same provider data through an adapter instead of keeping a second progress database.
+
+### Streaming AI
+
+The assistant uses `streamText` and UI-message streaming so users see useful output as it is generated. Stop, retry, interrupted-stream handling, and partial-response preservation are implemented in the chat UI rather than simulated with delayed complete responses.
+
+### Production AI boundaries
+
+The chat route rejects malformed, empty, oversized, and overlong conversations before model conversion. It accepts at most 32 messages, limits each user message to 8,000 characters, limits serialized request size to 120,000 characters, limits saved StudyFlow context to 24,000 characters, and declares `maxDuration = 30` for deployment. These are meaningful abuse protections; distributed global rate limiting would require an external shared store that this local-first project does not currently provision.
+
+### Real-data constellation
+
+Courses become major nodes and assignments/tasks become child nodes. Progress comes from stored completion/status values; overdue incomplete work becomes `needs-review`. The adapter uses deterministic ID-based positions, adaptive course spacing, bounded collision resolution, and local child rings so adding courses does not randomly reshuffle the map.
+
+### Lazy 3D and accessibility
+
+The Three/R3F scene is client-only and dynamically loaded. DPR is capped, geometry is procedural, background effects have mobile quality limits, and reduced motion disables ambient movement and shooting stars. WebGL failure falls back to a readable 2D representation and the keyboard-accessible list remains available regardless of canvas support.
+
+## Performance
+
+- The 3D scene is isolated behind a client-only dynamic import.
+- Procedural geometry and points avoid large models and textures.
+- DPR is capped at `1.5` desktop and `1.25` compact devices.
+- Galaxy particles are reduced on mobile; shooting stars are desktop-only.
+- Shooting-star trails use a fixed recycled particle buffer, not growing arrays.
+- The renderer uses demand-driven frames and refs for per-frame transforms.
+- A prior production review measured a separate Three/R3F feature chunk at approximately 918 KB raw and 244 KB encoded. Headless Chromium used SwiftShader, so those measurements are diagnostic rather than physical-device performance claims.
+
+## Testing
+
+```bash
+npm test
+npm run lint
+npx tsc --noEmit
+npm run build
+npx playwright test
+```
+
+Playwright projects cover Chromium, Firefox, WebKit as a Safari approximation, and mobile WebKit using iPhone viewport/touch emulation. Physical Safari and real-device testing remain recommended before public submission.
+
+The test suite covers local workflow persistence, AI UI behavior, real-data constellation mapping, deterministic layout spacing for 1/5/8/12 courses, ten-child clusters, WebGL fallback, reduced motion, loading, touch interaction, and responsive overflow.
+
+## Production Protection
+
+- `NVIDIA_API_KEY` is server-only.
+- Invalid JSON and invalid message structures return `400`.
+- Empty messages return `400`.
+- Oversized messages, context, and conversation payloads return `413`.
+- Streaming execution is capped at 30 seconds with `maxDuration`.
+- The client prevents duplicate submissions while a request is active.
+- No distributed rate limiter is claimed; adding one requires a shared production store such as a managed Redis/KV service.
+
+## How AI Tools Built This
+
+AI coding assistants were used throughout the capstone to explore requirements, audit the existing codebase, propose component boundaries, and accelerate implementation of the streaming assistant and Learning Constellation. Generated work was treated as a draft: the repository diff was audited after one assistant reached its usage limit, existing storage was traced before replacing demo constellation data, and implementation details were corrected when browser behavior disagreed with assumptions.
+
+The verification loop was deliberate. TypeScript, ESLint, Vitest, production builds, Playwright interaction tests, mobile viewport checks, reduced-motion checks, WebGL failure checks, and performance review scripts were used to validate generated code. AI-proposed sample data was later replaced by the real `studyflow:data` adapter. Subsequent review caught and fixed sidebar icon flex shrinking, inconsistent Course/Subject product language, dense constellation collisions, camera framing, and bounded cosmic particle behavior.
+
+## Known Limitations
+
+- Persistence is browser-local; there is no authentication or cloud sync yet.
+- The current data model has no quiz, mastery, confidence, or study-session entity, so the constellation does not invent those metrics.
+- Live AI responses depend on NVIDIA provider availability and a configured API key.
+- Distributed production rate limiting is not included because no shared deployment store is configured.
+- Playwright WebKit is a Safari compatibility approximation, not physical Safari hardware.
+
+## Future Improvements
+
+- Authentication and cloud synchronization
+- A first-class topic, quiz, and mastery model
+- AI-generated concept relationships grounded in saved course material
+- A managed distributed rate-limit store
+- Larger-graph instancing and graph-level culling
+
+## Deployment Checklist
+
+Before deploying to Vercel:
+
+1. Set `NVIDIA_API_KEY` as a server-only production environment variable.
+2. Keep `STUDYFLOW_ENABLE_FAILURE_TESTS=false` or unset.
+3. Use the build command `npm run build`.
+4. Confirm `/`, `/courses`, `/ai`, `/learning-constellation`, and `/health` load publicly.
+5. Verify course creation persists after reload.
+6. Verify AI streaming, Stop, retry, and an oversized-message rejection.
+7. Verify the constellation reflects the created course and assignments on desktop and mobile.
+8. Check the browser console for critical errors in Chromium and Safari/WebKit-like testing.
+
+## Checkpoint 2 Reviewer Note
+
+StudyFlow AI is a local-first learning workspace combining course and task management with a server-side streaming AI study assistant and a real-data 3D Learning Constellation. The final pass adds AI request caps and a 30-second stream limit, documents the architecture and environment setup, and verifies the main workflows with unit, production-build, and cross-browser Playwright coverage. Replace the Live Demo placeholder above with the deployed Vercel URL before submission.
 # StudyFlow
 
 StudyFlow is a student productivity and academic management application that brings study planning, courses, assignments, tasks, notes, progress tracking, and account management into one focused interface. StudyFlow AI adds a real-time streaming study assistant for planning, prioritization, explanations, and academic productivity support.

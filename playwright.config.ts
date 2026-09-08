@@ -23,5 +23,20 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+      testMatch: /primary-flow\.spec\.ts|learning-constellation\.spec\.ts/,
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+      testMatch: /primary-flow\.spec\.ts|learning-constellation\.spec\.ts/,
+    },
+    {
+      name: "mobile-webkit",
+      use: { ...devices["iPhone 13"] },
+      testMatch: /primary-flow\.spec\.ts|learning-constellation\.spec\.ts/,
+    },
   ],
 });

@@ -5,8 +5,10 @@ import { getStudyFlowModel, STUDYFLOW_SYSTEM_PROMPT } from "@/lib/ai/config";
 import { analyzeStudyProgress } from "@/lib/ai/study-progress-tool";
 import { createStudyQuiz, type StudyFlowTools } from "@/lib/ai/study-quiz-tool";
 import { formatStudyFlowContext, parseStudyFlowContext } from "@/lib/ai/studyflow-context";
+import { validateChatRequest } from "./request-validation";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function POST(request: Request) {
   try {
@@ -15,11 +17,21 @@ export async function POST(request: Request) {
     if (failureTest === "rate-limit") return new Response("RATE_LIMIT", { status: 429 });
     if (failureTest === "slow") await new Promise((resolve) => setTimeout(resolve, 2500));
 
-    const body: unknown = await request.json();
-
-    if (!body || typeof body !== "object" || !("messages" in body) || !Array.isArray(body.messages)) {
-      return Response.json({ error: "A valid message history is required." }, { status: 400 });
+    const contentLength = Number(request.headers.get("content-length"));
+    if (Number.isFinite(contentLength) && contentLength > 120_000) {
+      return Response.json({ error: "This request is too large." }, { status: 413 });
     }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "The request body must be valid JSON." }, { status: 400 });
+    }
+
+    const serializedBody = JSON.stringify(body) ?? "";
+    const validation = validateChatRequest(body, serializedBody);
+    if (!validation.ok) return Response.json({ error: validation.message }, { status: validation.status });
 
     const requestBody = body as { messages: unknown[]; studyFlowContext?: unknown };
     const messages = requestBody.messages as UIMessage<unknown, Record<string, never>, StudyFlowTools>[];
