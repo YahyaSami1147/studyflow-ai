@@ -12,26 +12,37 @@ export const maxDuration = 300;
 
 export async function POST(request: Request) {
   const requestId = crypto.randomUUID();
-  console.log("[StudyFlow chat] request received", { requestId, method: request.method });
+  const startedAt = Date.now();
+
+  const logTiming = (label: string, extra: Record<string, unknown> = {}) => {
+    console.log(`[StudyFlow chat] ${label}`, {
+      requestId,
+      startedAt,
+      elapsedMs: Date.now() - startedAt,
+      ...extra,
+    });
+  };
+
+  logTiming("request received", { method: request.method });
 
   try {
     const failureTest = getFailureTest(request);
     if (failureTest === "server") {
-      console.error("[StudyFlow chat] server failure test triggered", { requestId });
+      logTiming("server failure test triggered", { errorType: "server" });
       return new Response("SERVER_ERROR", { status: 500 });
     }
     if (failureTest === "rate-limit") {
-      console.warn("[StudyFlow chat] rate-limit failure test triggered", { requestId });
+      logTiming("rate-limit failure test triggered", { errorType: "rate-limit" });
       return new Response("RATE_LIMIT", { status: 429 });
     }
     if (failureTest === "slow") {
-      console.log("[StudyFlow chat] slow failure test enabled", { requestId, delayMs: 2500 });
+      logTiming("slow failure test enabled", { delayMs: 2500 });
       await new Promise((resolve) => setTimeout(resolve, 2500));
     }
 
     const contentLength = Number(request.headers.get("content-length"));
     if (Number.isFinite(contentLength) && contentLength > 120_000) {
-      console.warn("[StudyFlow chat] oversized request rejected", { requestId, contentLength });
+      logTiming("oversized request rejected", { contentLength });
       return Response.json({ error: "This request is too large." }, { status: 413 });
     }
 
@@ -39,27 +50,39 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch (error) {
-      console.warn("[StudyFlow chat] invalid JSON request body", { requestId, error });
+      logTiming("invalid JSON request body", { error: error instanceof Error ? error.message : String(error) });
       return Response.json({ error: "The request body must be valid JSON." }, { status: 400 });
     }
 
     const serializedBody = JSON.stringify(body) ?? "";
     const validation = validateChatRequest(body, serializedBody);
     if (!validation.ok) {
-      console.warn("[StudyFlow chat] request validation failed", { requestId, status: validation.status, message: validation.message });
+      logTiming("request validation failed", { status: validation.status, message: validation.message });
       return Response.json({ error: validation.message }, { status: validation.status });
     }
+
+    logTiming("request validation complete", {
+      requestSizeBytes: serializedBody.length,
+      messageCount: Array.isArray((body as { messages?: unknown[] })?.messages) ? (body as { messages: unknown[] }).messages.length : 0,
+    });
 
     const requestBody = body as { messages: unknown[]; studyFlowContext?: unknown };
     const messages = requestBody.messages as UIMessage<unknown, Record<string, never>, StudyFlowTools>[];
     const studyFlowContext = parseStudyFlowContext(requestBody.studyFlowContext);
     const modelMessages = await convertToModelMessages(messages);
-    console.log("[StudyFlow chat] model request started", {
-      requestId,
+    const modelRequestStartedAt = Date.now();
+
+    logTiming("model request started", {
+      modelRequestStartedAt,
+      modelRequestStartDelayMs: modelRequestStartedAt - startedAt,
       messageCount: modelMessages.length,
       toolNames: ["analyzeStudyProgress", "createStudyQuiz"],
       hasStudyFlowContext: Boolean(studyFlowContext),
     });
+
+    let firstTextChunkLogged = false;
+    let firstTextChunkAt: number | undefined;
+    let firstTextChunkDelayMs: number | undefined;
 
     const result = streamText({
       model: getStudyFlowModel(),
@@ -70,18 +93,69 @@ export async function POST(request: Request) {
       tools: { analyzeStudyProgress, createStudyQuiz },
       stopWhen: stepCountIs(5),
       onFinish: ({ text, finishReason, usage, steps }) => {
-        console.log("[StudyFlow chat] generation finished", {
-          requestId,
+        const generationFinishedAt = Date.now();
+        const totalGenerationMs = generationFinishedAt - modelRequestStartedAt;
+        const totalRequestMs = generationFinishedAt - startedAt;
+        const outputTokens = usage?.outputTokens ?? 0;
+        const outputTokensPerSecond = totalGenerationMs > 0 ? outputTokens / (totalGenerationMs / 1000) : 0;
+
+        logTiming("generation finished", {
           finishReason,
+          generationFinishedAt,
+          totalGenerationMs,
+          totalRequestMs,
+          timeToFirstChunkMs: firstTextChunkDelayMs,
+          outputTokens,
+          outputTokensPerSecond,
           textLength: text.length,
           stepCount: steps.length,
           usage,
         });
+
+        logTiming("total request duration", {
+          totalRequestMs,
+          generationFinishedAt,
+          outputTokens,
+          outputTokensPerSecond,
+        });
       },
     });
 
-    const stream = failureTest === "mid-stream" ? interruptAfterFirstTextDelta(result.stream) : result.stream;
-    console.log("[StudyFlow chat] stream created", { requestId, midStreamFailure: failureTest === "mid-stream" });
+    const stream = failureTest === "mid-stream"
+      ? interruptAfterFirstTextDelta(result.stream.pipeThrough(new TransformStream({
+          transform(part, controller) {
+            if (part.type === "text-delta" && !firstTextChunkLogged) {
+              firstTextChunkLogged = true;
+              firstTextChunkAt = Date.now();
+              firstTextChunkDelayMs = firstTextChunkAt - modelRequestStartedAt;
+              logTiming("first text chunk received from model", {
+                firstTextChunkAt,
+                timeToFirstChunkMs: firstTextChunkDelayMs,
+                chunkLength: typeof part.text === "string" ? part.text.length : 0,
+              });
+            }
+
+            controller.enqueue(part);
+          },
+        })))
+      : result.stream.pipeThrough(new TransformStream({
+          transform(part, controller) {
+            if (part.type === "text-delta" && !firstTextChunkLogged) {
+              firstTextChunkLogged = true;
+              firstTextChunkAt = Date.now();
+              firstTextChunkDelayMs = firstTextChunkAt - modelRequestStartedAt;
+              logTiming("first text chunk received from model", {
+                firstTextChunkAt,
+                timeToFirstChunkMs: firstTextChunkDelayMs,
+                chunkLength: typeof part.text === "string" ? part.text.length : 0,
+              });
+            }
+
+            controller.enqueue(part);
+          },
+        }));
+
+    logTiming("stream created", { streamStartedAt: Date.now(), midStreamFailure: failureTest === "mid-stream" });
 
     return createUIMessageStreamResponse({
       stream: toUIMessageStream({
@@ -90,7 +164,7 @@ export async function POST(request: Request) {
       }),
     });
   } catch (error) {
-    console.error("[StudyFlow chat] request failed", { requestId, error });
+    logTiming("request failed", { error: error instanceof Error ? error.message : String(error) });
     return new Response("SERVER_ERROR", { status: 500 });
   }
 }
