@@ -8,35 +8,59 @@ import { formatStudyFlowContext, parseStudyFlowContext } from "@/lib/ai/studyflo
 import { validateChatRequest } from "./request-validation";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
+  const requestId = crypto.randomUUID();
+  console.log("[StudyFlow chat] request received", { requestId, method: request.method });
+
   try {
     const failureTest = getFailureTest(request);
-    if (failureTest === "server") return new Response("SERVER_ERROR", { status: 500 });
-    if (failureTest === "rate-limit") return new Response("RATE_LIMIT", { status: 429 });
-    if (failureTest === "slow") await new Promise((resolve) => setTimeout(resolve, 2500));
+    if (failureTest === "server") {
+      console.error("[StudyFlow chat] server failure test triggered", { requestId });
+      return new Response("SERVER_ERROR", { status: 500 });
+    }
+    if (failureTest === "rate-limit") {
+      console.warn("[StudyFlow chat] rate-limit failure test triggered", { requestId });
+      return new Response("RATE_LIMIT", { status: 429 });
+    }
+    if (failureTest === "slow") {
+      console.log("[StudyFlow chat] slow failure test enabled", { requestId, delayMs: 2500 });
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    }
 
     const contentLength = Number(request.headers.get("content-length"));
     if (Number.isFinite(contentLength) && contentLength > 120_000) {
+      console.warn("[StudyFlow chat] oversized request rejected", { requestId, contentLength });
       return Response.json({ error: "This request is too large." }, { status: 413 });
     }
 
     let body: unknown;
     try {
       body = await request.json();
-    } catch {
+    } catch (error) {
+      console.warn("[StudyFlow chat] invalid JSON request body", { requestId, error });
       return Response.json({ error: "The request body must be valid JSON." }, { status: 400 });
     }
 
     const serializedBody = JSON.stringify(body) ?? "";
     const validation = validateChatRequest(body, serializedBody);
-    if (!validation.ok) return Response.json({ error: validation.message }, { status: validation.status });
+    if (!validation.ok) {
+      console.warn("[StudyFlow chat] request validation failed", { requestId, status: validation.status, message: validation.message });
+      return Response.json({ error: validation.message }, { status: validation.status });
+    }
 
     const requestBody = body as { messages: unknown[]; studyFlowContext?: unknown };
     const messages = requestBody.messages as UIMessage<unknown, Record<string, never>, StudyFlowTools>[];
     const studyFlowContext = parseStudyFlowContext(requestBody.studyFlowContext);
     const modelMessages = await convertToModelMessages(messages);
+    console.log("[StudyFlow chat] model request started", {
+      requestId,
+      messageCount: modelMessages.length,
+      toolNames: ["analyzeStudyProgress", "createStudyQuiz"],
+      hasStudyFlowContext: Boolean(studyFlowContext),
+    });
+
     const result = streamText({
       model: getStudyFlowModel(),
       system: `${STUDYFLOW_SYSTEM_PROMPT}\n\n${formatStudyFlowContext(studyFlowContext)}`,
@@ -45,16 +69,28 @@ export async function POST(request: Request) {
       maxRetries: 1,
       tools: { analyzeStudyProgress, createStudyQuiz },
       stopWhen: stepCountIs(5),
+      onFinish: ({ text, finishReason, usage, steps }) => {
+        console.log("[StudyFlow chat] generation finished", {
+          requestId,
+          finishReason,
+          textLength: text.length,
+          stepCount: steps.length,
+          usage,
+        });
+      },
     });
 
     const stream = failureTest === "mid-stream" ? interruptAfterFirstTextDelta(result.stream) : result.stream;
+    console.log("[StudyFlow chat] stream created", { requestId, midStreamFailure: failureTest === "mid-stream" });
+
     return createUIMessageStreamResponse({
       stream: toUIMessageStream({
         stream,
         onError: (error) => error instanceof Error && error.message === "STREAM_INTERRUPTED" ? "STREAM_INTERRUPTED" : "SERVER_ERROR",
       }),
     });
-  } catch {
+  } catch (error) {
+    console.error("[StudyFlow chat] request failed", { requestId, error });
     return new Response("SERVER_ERROR", { status: 500 });
   }
 }

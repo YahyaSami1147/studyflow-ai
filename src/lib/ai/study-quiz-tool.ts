@@ -42,5 +42,16 @@ export type StudyFlowTools = {
 export const createStudyQuiz = {
   description: "Create an interactive multiple-choice quiz when the user explicitly asks for a quiz, MCQs, practice questions, or to be tested. Use exactly four options and one correct option per question. Use StudyFlow course context when relevant, but do not claim unavailable course materials.",
   inputSchema: studyQuizInputSchema,
-  execute: async (input: StudyQuiz): Promise<StudyQuiz> => studyQuizInputSchema.parse(input),
+  execute: async (input: StudyQuiz): Promise<StudyQuiz> => {
+    console.log("[StudyFlow AI] createStudyQuiz started", { title: input.title, topic: input.topic, questionCount: input.questions.length });
+
+    try {
+      const parsed = studyQuizInputSchema.parse(input);
+      console.log("[StudyFlow AI] createStudyQuiz finished", { title: parsed.title, topic: parsed.topic, questionCount: parsed.questions.length });
+      return parsed;
+    } catch (error) {
+      console.error("[StudyFlow AI] createStudyQuiz failed", { input, error });
+      throw error;
+    }
+  },
 };
